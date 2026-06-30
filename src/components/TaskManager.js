@@ -69,6 +69,28 @@ export default function TaskManager() {
   const [formData, setFormData] = useState(emptyForm);
   const [error, setError] = useState('');
 
+  // --- Form field change handler (used by modal inputs) ---
+  const handleFormChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // --- Date validation helper ---
+  const isValidDate = (dateStr) => {
+    if (!dateStr) return true; // empty is ok
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
+    // Check the date actually exists (e.g. June 31 becomes July 1)
+    const parts = dateStr.split('T')[0].split('-');
+    if (parts.length >= 3) {
+      const inputDay = parseInt(parts[2], 10);
+      const inputMonth = parseInt(parts[1], 10);
+      if (d.getDate() !== inputDay || (d.getMonth() + 1) !== inputMonth) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   // --- Filtered tasks ---
   const filteredTasks = tasks.filter((task) => {
     if (searchQuery) {
@@ -233,6 +255,12 @@ export default function TaskManager() {
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
+
+    // Validate the due date
+    if (formData.dueDate && !isValidDate(formData.dueDate)) {
+      setError('⚠️ That date doesn\'t exist (e.g. June only has 30 days). Please pick a valid date.');
+      return;
+    }
 
     const taskData = {
       ...formData,
@@ -601,7 +629,7 @@ export default function TaskManager() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="modal-overlay" 
-            onClick={() => setShowModal(false)}
+            onClick={() => { setShowModal(false); setFormData(emptyForm); }}
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
@@ -614,7 +642,7 @@ export default function TaskManager() {
                 <h2 className="modal-title">{formData.id ? 'Edit Task' : 'Add New Task'}</h2>
                 <button
                   className="btn btn-ghost btn-icon"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => { setShowModal(false); setFormData(emptyForm); }}
                 >
                   <X size={20} />
                 </button>
@@ -715,7 +743,7 @@ export default function TaskManager() {
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    onClick={() => setShowModal(false)}
+                    onClick={() => { setShowModal(false); setFormData(emptyForm); }}
                   >
                     Cancel
                   </button>

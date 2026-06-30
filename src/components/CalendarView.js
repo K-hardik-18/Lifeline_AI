@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -48,6 +48,16 @@ export default function CalendarView() {
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
   const [currentYear, setCurrentYear] = useState(now.getFullYear());
   const [selectedDate, setSelectedDate] = useState(null);
+  const selectedPanelRef = useRef(null);
+
+  // Auto-scroll to task panel when a date is selected
+  useEffect(() => {
+    if (selectedDate && selectedPanelRef.current) {
+      setTimeout(() => {
+        selectedPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [selectedDate]);
 
   const prevMonth = () => {
     if (currentMonth === 0) {
@@ -273,7 +283,8 @@ export default function CalendarView() {
         {/* Selected Day Panel */}
         <AnimatePresence>
           {selectedDate && (
-            <motion.section 
+            <motion.section
+              ref={selectedPanelRef}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
