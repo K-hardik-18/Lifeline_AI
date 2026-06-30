@@ -130,7 +130,7 @@ export default function Dashboard({ onNavigate }) {
           transition={{ type: "spring", bounce: 0.4 }}
         >
           <div className="empty-state-icon" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            <Rocket size={48} strokeWidth={1.5} />
+            <Zap size={48} strokeWidth={1.5} />
           </div>
           <h3 className="empty-state-title">Welcome to LifeLine AI</h3>
           <p className="empty-state-text">
