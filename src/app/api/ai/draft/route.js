@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getGeminiResponse } from "@/lib/gemini";
 
-const SYSTEM_INSTRUCTION = `Draft a professional but friendly message based on the user's request. Return the message ready to copy-paste.`;
+const SYSTEM_INSTRUCTION = `Draft a professional but friendly message based on the user's request. Return the message ready to copy-paste.
+
+CRITICAL RULE: You are STRICTLY a productivity, task, and habit assistant. If the user asks you to draft content about general knowledge, trivia, sports (e.g., F1), or anything irrelevant to productivity, academics, or professional work, you MUST politely refuse to write the draft and guide them back to their tasks.`;
 
 export async function POST(request) {
   try {

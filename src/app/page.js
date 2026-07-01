@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { TaskProvider } from '@/context/TaskContext';
+import { RoutineProvider } from '@/context/RoutineContext';
 import Navbar from '@/components/Sidebar';
 import Dashboard from '@/components/Dashboard';
 import TaskManager from '@/components/TaskManager';
 import ChatView from '@/components/ChatView';
 import CalendarView from '@/components/CalendarView';
 import Analytics from '@/components/Analytics';
+import RoutineView from '@/components/RoutineView';
 import DraftView from '@/components/DraftView';
 import FocusView from '@/components/FocusView';
+import FloatingClock from '@/components/FloatingClock';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Menu } from 'lucide-react';
 
@@ -29,6 +32,8 @@ function AppContent() {
         return <CalendarView />;
       case 'analytics':
         return <Analytics />;
+      case 'routines':
+        return <RoutineView />;
       case 'drafts':
         return <DraftView />;
       case 'focus':
@@ -66,6 +71,7 @@ function AppContent() {
           </AnimatePresence>
         </div>
       </main>
+      <FloatingClock />
     </div>
   );
 }
@@ -116,7 +122,9 @@ export default function Home() {
 
   return (
     <TaskProvider>
-      <AppContent />
+      <RoutineProvider>
+        <AppContent />
+      </RoutineProvider>
     </TaskProvider>
   );
 }

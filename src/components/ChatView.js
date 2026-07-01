@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTasks } from '@/context/TaskContext';
+import { useRoutines } from '@/context/RoutineContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Send, User, Bot, Lightbulb, XCircle } from 'lucide-react';
 import { marked } from 'marked';
@@ -24,6 +25,7 @@ const WELCOME_MESSAGE = {
 
 export default function ChatView() {
   const { tasks } = useTasks();
+  const { routines } = useRoutines();
 
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
@@ -62,7 +64,7 @@ export default function ChatView() {
         const res = await fetch('/api/ai/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: trimmed, tasks, context: '', currentTime: new Date().toString() }),
+          body: JSON.stringify({ message: trimmed, tasks, routines, context: '', currentTime: new Date().toString() }),
         });
 
         if (!res.ok) throw new Error(res.status === 429 ? 'rate_limit' : 'chat_failed');
@@ -90,7 +92,7 @@ export default function ChatView() {
         setIsLoading(false);
       }
     },
-    [input, isLoading, tasks],
+    [input, isLoading, tasks, routines],
   );
 
   const handleKeyDown = (e) => {
@@ -159,9 +161,9 @@ export default function ChatView() {
       </div>
 
       {/* Chat Container */}
-      <div className="chat-container" style={{ flex: 1, height: 'calc(100vh - 140px)' }}>
+      <div className="chat-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 140px)' }}>
         {/* Messages */}
-        <div className="chat-messages p-4">
+        <div className="chat-messages p-4" style={{ flex: 1, overflowY: 'auto' }}>
           <AnimatePresence>
             {messages.map((msg, idx) => (
               <motion.div 

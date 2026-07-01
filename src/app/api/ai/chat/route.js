@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { getGeminiResponse } from "@/lib/gemini";
 
-const SYSTEM_INSTRUCTION = `You are LifeLine AI, a brilliant productivity assistant. You have access to the user's tasks and help them manage time, prioritize, and take action. Be proactive, helpful, and encouraging. When the user asks what to focus on, analyze their tasks by urgency and importance. Give specific, actionable advice. Keep responses concise but helpful.`;
+const SYSTEM_INSTRUCTION = `You are LifeLine AI, a brilliant productivity assistant. You have access to both the user's Tasks and Daily Routines. Help them manage time, prioritize, and take action. Be proactive, helpful, and encouraging. When the user asks what to focus on, cross-reference their tasks and routines. For example, if a routine is low priority but there are critical tasks, advise them to do the tasks first. Give specific, actionable advice. Keep responses concise but helpful.
+
+CRITICAL RULE: You are STRICTLY a productivity, task, and habit assistant. If the user asks general knowledge questions, trivia, coding help unrelated to their tasks, sports facts (e.g., "tell me about F1"), or anything irrelevant to their productivity schedule, you MUST politely refuse to answer. Redirect them back to their tasks or ask how you can help them be productive today. Never break character.`;
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { message, tasks, context, currentTime } = body;
+    const { message, tasks, routines, context, currentTime } = body;
 
     if (!message) {
       return NextResponse.json(
@@ -21,6 +23,10 @@ export async function POST(request) {
 
     if (tasks && tasks.length > 0) {
       prompt += `User's current tasks:\n${JSON.stringify(tasks, null, 2)}\n\n`;
+    }
+
+    if (routines && routines.length > 0) {
+      prompt += `User's daily routines/habits:\n${JSON.stringify(routines, null, 2)}\n\n`;
     }
 
     if (context) {

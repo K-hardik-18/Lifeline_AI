@@ -1,5 +1,5 @@
 "use client";
-import { LayoutDashboard, CheckSquare, MessageSquare, CalendarDays, BarChart3, PenTool, Sparkles, Timer } from "lucide-react";
+import { LayoutDashboard, CheckSquare, MessageSquare, CalendarDays, BarChart3, PenTool, Sparkles, Timer, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Sidebar({ currentView, onNavigate }) {
@@ -10,6 +10,7 @@ export default function Sidebar({ currentView, onNavigate }) {
     { id: "chat", label: "AI Chat", icon: MessageSquare },
     { id: "calendar", label: "Calendar", icon: CalendarDays },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
+    { id: "routines", label: "Routines", icon: Activity },
     { id: "drafts", label: "Drafts", icon: PenTool },
   ];
 
