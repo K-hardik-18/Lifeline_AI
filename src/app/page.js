@@ -10,9 +10,10 @@ import ChatView from '@/components/ChatView';
 import CalendarView from '@/components/CalendarView';
 import Analytics from '@/components/Analytics';
 import RoutineView from '@/components/RoutineView';
-import DraftView from '@/components/DraftView';
+import NotesView from '@/components/NotesView';
 import FocusView from '@/components/FocusView';
 import FloatingClock from '@/components/FloatingClock';
+import { NoteProvider } from '@/context/NoteContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Menu } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -51,8 +52,8 @@ function AppContent() {
         return <Analytics />;
       case 'routines':
         return <RoutineView />;
-      case 'drafts':
-        return <DraftView />;
+      case 'notes':
+        return <NotesView />;
       case 'focus':
         return <FocusView />;
       default:
@@ -146,7 +147,9 @@ export default function Home() {
   return (
     <TaskProvider>
       <RoutineProvider>
-        <AppContent />
+        <NoteProvider>
+          <AppContent />
+        </NoteProvider>
       </RoutineProvider>
     </TaskProvider>
   );

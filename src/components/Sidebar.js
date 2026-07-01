@@ -8,12 +8,12 @@ export default function Sidebar({ currentView, onNavigate }) {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "tasks", label: "Tasks", icon: CheckSquare },
+    { id: "notes", label: "Brain Dump", icon: PenTool },
     { id: "focus", label: "Focus Mode", icon: Timer },
     { id: "chat", label: "AI Chat", icon: MessageSquare },
     { id: "calendar", label: "Calendar", icon: CalendarDays },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "routines", label: "Routines", icon: Activity },
-    { id: "drafts", label: "Drafts", icon: PenTool },
   ];
 
   return (

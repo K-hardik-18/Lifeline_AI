@@ -1,4 +1,4 @@
-import { Inter, Outfit } from 'next/font/google';
+import { Inter, Outfit, Caveat } from 'next/font/google';
 import "./globals.css";
 import { RoutineProvider } from "@/context/RoutineContext";
 import { AuthProvider } from "@/context/AuthContext";
@@ -15,6 +15,12 @@ const outfit = Outfit({
   variable: '--font-outfit',
 });
 
+const caveat = Caveat({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-caveat',
+});
+
 export const metadata = {
   title: "LifeLine AI — Your AI-Powered Productivity Companion",
   description: "Stop missing deadlines. LifeLine AI is your intelligent productivity companion that goes beyond reminders — it actively helps you take action, prioritize tasks, and stay on top of everything that matters.",
@@ -28,7 +34,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
+    <html lang="en" className={`${inter.variable} ${outfit.variable} ${caveat.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#FDFBF7" />
