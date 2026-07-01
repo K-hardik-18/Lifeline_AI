@@ -156,7 +156,7 @@ export default function RoutineView() {
       </div>
 
       {activeTab === 'tracker' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: 'var(--space-xl)', alignItems: 'start' }}>
+        <div className="routine-tracker-layout">
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
             {/* AI Analysis Section */}

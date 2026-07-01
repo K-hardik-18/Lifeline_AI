@@ -1,10 +1,20 @@
 "use client";
-import { LayoutDashboard, CheckSquare, MessageSquare, CalendarDays, BarChart3, PenTool, Sparkles, Timer, Activity } from "lucide-react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from 'react';
+import { LayoutDashboard, CheckSquare, MessageSquare, CalendarDays, BarChart3, PenTool, Sparkles, Timer, Activity, Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import ProfileMenu from './ProfileMenu';
 
 export default function Sidebar({ currentView, onNavigate }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "tasks", label: "Tasks", icon: CheckSquare },
@@ -24,12 +34,17 @@ export default function Sidebar({ currentView, onNavigate }) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, type: "spring" }}
+          onClick={() => {
+            if (isMobile) setIsMobileMenuOpen(!isMobileMenuOpen);
+          }}
+          style={{ cursor: isMobile ? 'pointer' : 'default' }}
         >
           <Sparkles className="logo-icon" size={24} color="var(--accent-purple)" />
           <span>LifeLine AI</span>
         </motion.div>
 
-        <nav className="navbar-nav">
+        {/* Desktop Nav */}
+        <nav className="navbar-nav desktop-nav">
           {navItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
@@ -58,120 +73,43 @@ export default function Sidebar({ currentView, onNavigate }) {
           })}
         </nav>
 
+        {/* Mobile Vertical Menu */}
+        <AnimatePresence>
+          {isMobile && isMobileMenuOpen && (
+            <motion.div
+              className="mobile-vertical-menu"
+              initial={{ opacity: 0, x: -20, y: 70 }}
+              animate={{ opacity: 1, x: 0, y: 70 }}
+              exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+            >
+              <div className="mobile-menu-inner">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentView === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        onNavigate(item.id);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`mobile-nav-item ${isActive ? "active" : ""}`}
+                    >
+                      <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                      <span className="mobile-nav-label">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="navbar-actions">
           <ProfileMenu />
         </div>
       </div>
       
-      <style jsx>{`
-        .top-navbar {
-          background: rgba(253, 251, 247, 0.85);
-          backdrop-filter: blur(16px);
-          border-bottom: 1px solid var(--border-color);
-          position: sticky;
-          top: 0;
-          z-index: 100;
-          width: 100%;
-        }
-        
-        .navbar-container {
-          max-width: 1400px;
-          margin: 0 auto;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 var(--space-xl);
-          height: 70px;
-        }
-        
-        .logo {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
-          font-family: var(--font-heading);
-          font-size: 1.4rem;
-          font-weight: 800;
-          letter-spacing: -0.02em;
-          background: var(--gradient-primary);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-
-        .logo-icon {
-          -webkit-text-fill-color: initial;
-        }
-        
-        .navbar-nav {
-          display: flex;
-          align-items: center;
-          gap: var(--space-xl);
-          overflow-x: auto;
-          scrollbar-width: none;
-        }
-        
-        .navbar-nav::-webkit-scrollbar {
-          display: none;
-        }
-        
-        .nav-item {
-          display: flex;
-          align-items: center;
-          gap: var(--space-xs);
-          padding: var(--space-md) var(--space-sm);
-          border: none;
-          background: transparent;
-          color: var(--text-secondary);
-          font-family: var(--font-sans);
-          font-size: 1rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-          position: relative;
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
-        
-        .nav-item:hover {
-          color: var(--accent-blue);
-        }
-        
-        .nav-item.active {
-          color: var(--accent-blue);
-          font-weight: 700;
-        }
-
-        .nav-item-indicator {
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          height: 3px;
-          background: var(--accent-blue);
-          border-radius: 3px 3px 0 0;
-          z-index: 1;
-        }
-
-        @media (max-width: 768px) {
-          .nav-label {
-            display: none;
-          }
-          .nav-item {
-            padding: var(--space-md) var(--space-md);
-          }
-          .navbar-container {
-            padding: 0 var(--space-sm);
-          }
-          .logo {
-            font-size: 1.1rem;
-            margin-right: var(--space-md);
-            flex-shrink: 0;
-          }
-          .navbar-nav {
-            gap: var(--space-sm);
-            padding-right: var(--space-md);
-          }
-        }
-      `}</style>
     </header>
   );
 }

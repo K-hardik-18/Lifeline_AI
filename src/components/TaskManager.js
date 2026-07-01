@@ -384,7 +384,7 @@ export default function TaskManager() {
               className="btn btn-primary btn-lg"
               type="submit"
               disabled={smartLoading || !smartInput.trim()}
-              style={{ minWidth: 52 }}
+              style={{ minWidth: 52, flexShrink: 0 }}
             >
               {smartLoading ? (
                 <span className="spinner" style={{ width: 18, height: 18, borderTopColor: '#fff' }} />

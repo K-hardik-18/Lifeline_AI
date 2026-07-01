@@ -92,9 +92,7 @@ export default function Dashboard({ onNavigate }) {
   }, [tasks]);
 
   useEffect(() => {
-    if (isLoaded && tasks.length > 0) {
-      fetchBriefing();
-    }
+    // Only fetch automatically if they click the button, don't auto-fetch on load anymore as requested.
   }, [isLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isLoaded) {

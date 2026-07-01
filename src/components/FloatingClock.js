@@ -36,7 +36,7 @@ export default function FloatingClock() {
   };
 
   return (
-    <div style={{
+    <div className="floating-clock" style={{
       position: 'fixed',
       bottom: '24px',
       left: '24px',

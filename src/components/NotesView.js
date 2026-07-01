@@ -63,12 +63,12 @@ export default function NotesView() {
   };
 
   return (
-    <motion.div 
-      className="notes-view"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-    >
+    <div className="notes-view" style={{ padding: '24px 16px', maxWidth: '1000px', margin: '0 auto' }}>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+      >
       <div className="notes-header">
         <div>
           <h2>Brain Dump</h2>
@@ -187,7 +187,7 @@ export default function NotesView() {
 
       <style jsx>{`
         .notes-view {
-          padding: var(--space-xl) 0;
+          padding: var(--space-xl) var(--space-md);
           max-width: 1000px;
           margin: 0 auto;
         }
@@ -412,6 +412,9 @@ export default function NotesView() {
         }
         
         @media (max-width: 768px) {
+          .notes-view {
+            padding: var(--space-md);
+          }
           .notes-header {
             flex-direction: column;
             align-items: flex-start;
@@ -424,6 +427,7 @@ export default function NotesView() {
           }
           .masonry-grid {
             grid-template-columns: 1fr 1fr;
+            gap: var(--space-md);
           }
         }
         
@@ -433,6 +437,7 @@ export default function NotesView() {
           }
         }
       `}</style>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
