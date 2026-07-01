@@ -2,6 +2,8 @@
 import { LayoutDashboard, CheckSquare, MessageSquare, CalendarDays, BarChart3, PenTool, Sparkles, Timer, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 
+import ProfileMenu from './ProfileMenu';
+
 export default function Sidebar({ currentView, onNavigate }) {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -55,6 +57,10 @@ export default function Sidebar({ currentView, onNavigate }) {
             );
           })}
         </nav>
+
+        <div className="navbar-actions">
+          <ProfileMenu />
+        </div>
       </div>
       
       <style jsx>{`

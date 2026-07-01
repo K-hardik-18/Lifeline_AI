@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/context/AuthContext';
 
 const TaskContext = createContext();
 
@@ -22,58 +24,147 @@ const defaultTasks = [
 ];
 
 export function TaskProvider({ children }) {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount & check cache TTL
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setTasks(JSON.parse(stored));
-      } else {
-        setTasks(defaultTasks);
-      }
-    } catch {
-      setTasks(defaultTasks);
-    }
-    setIsLoaded(true);
-  }, []);
+    const fetchTasks = async () => {
+      try {
+        let cached = null;
+        let lastSynced = 0;
+        
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const rawCached = parsed.data || parsed; // fallback for older format
+          
+          // Deduplicate tasks by ID to fix React duplicate key errors from old Date.now() collisions
+          const uniqueCached = [];
+          const ids = new Set();
+          for (const item of rawCached) {
+            if (!ids.has(item.id)) {
+              ids.add(item.id);
+              uniqueCached.push(item);
+            }
+          }
+          cached = uniqueCached;
+          
+          lastSynced = parsed.lastSynced || 0;
+          setTasks(cached);
+        } else {
+          setTasks(defaultTasks);
+        }
+        setIsLoaded(true);
 
-  // Save to localStorage on change
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+        // Fetch from Supabase if authenticated and cache is older than 5 mins
+        if (user && Date.now() - lastSynced > 300000) {
+          const { data, error } = await supabase
+            .from('tasks')
+            .select('*')
+            .eq('user_id', user.id);
+            
+          if (!error && data) {
+            // Convert 'completed' boolean to 'status' string if needed
+            const mappedData = [];
+            const dbIds = new Set();
+            for (const t of data) {
+              if (!dbIds.has(t.id)) {
+                dbIds.add(t.id);
+                mappedData.push({
+                  ...t,
+                  status: t.completed ? 'completed' : 'pending'
+                });
+              }
+            }
+            setTasks(mappedData);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: mappedData, lastSynced: Date.now() }));
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchTasks();
+  }, [user]);
+
+  const updateCacheAndState = (newTasks) => {
+    setTasks(newTasks);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: newTasks, lastSynced: Date.now() }));
+  };
+
+  const syncTask = async (task, action = 'upsert') => {
+    if (!user) return;
+    try {
+      if (action === 'delete') {
+        await supabase.from('tasks').delete().eq('id', task.id).eq('user_id', user.id);
+      } else {
+        const payload = { ...task, user_id: user.id, completed: task.status === 'completed' };
+        // Clean out purely local UI fields if necessary, but JSONB columns are fine
+        await supabase.from('tasks').upsert(payload);
+      }
+    } catch (err) {
+      console.error('Supabase sync error', err);
     }
-  }, [tasks, isLoaded]);
+  };
 
   const addTask = useCallback((task) => {
     const newTask = {
-      id: Date.now().toString(),
       status: 'pending',
       subtasks: [],
       createdAt: new Date().toISOString(),
       ...task,
+      id: crypto.randomUUID(), // Ensure this cannot be overwritten by AI responses
     };
-    setTasks(prev => [newTask, ...prev]);
+    setTasks(prev => {
+      const updated = [newTask, ...prev];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updated, lastSynced: Date.now() }));
+      return updated;
+    });
+    syncTask(newTask, 'upsert');
     return newTask;
-  }, []);
+  }, [user]);
 
   const updateTask = useCallback((id, updates) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-  }, []);
+    setTasks(prev => {
+      let updatedTask = null;
+      const updatedList = prev.map(t => {
+        if (t.id === id) {
+          updatedTask = { ...t, ...updates };
+          return updatedTask;
+        }
+        return t;
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updatedList, lastSynced: Date.now() }));
+      if (updatedTask) syncTask(updatedTask, 'upsert');
+      return updatedList;
+    });
+  }, [user]);
 
   const deleteTask = useCallback((id) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
-  }, []);
+    setTasks(prev => {
+      const updated = prev.filter(t => t.id !== id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updated, lastSynced: Date.now() }));
+      return updated;
+    });
+    syncTask({ id }, 'delete');
+  }, [user]);
 
   const toggleTaskStatus = useCallback((id) => {
-    setTasks(prev => prev.map(t => {
-      if (t.id !== id) return t;
-      const newStatus = t.status === 'completed' ? 'pending' : 'completed';
-      return { ...t, status: newStatus, completedAt: newStatus === 'completed' ? new Date().toISOString() : null };
-    }));
-  }, []);
+    setTasks(prev => {
+      let updatedTask = null;
+      const updatedList = prev.map(t => {
+        if (t.id !== id) return t;
+        const newStatus = t.status === 'completed' ? 'pending' : 'completed';
+        updatedTask = { ...t, status: newStatus, completedAt: newStatus === 'completed' ? new Date().toISOString() : null };
+        return updatedTask;
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updatedList, lastSynced: Date.now() }));
+      if (updatedTask) syncTask(updatedTask, 'upsert');
+      return updatedList;
+    });
+  }, [user]);
 
   const getTasksByPriority = useCallback(() => {
     const order = { critical: 0, high: 1, medium: 2, low: 3 };

@@ -15,6 +15,8 @@ import FocusView from '@/components/FocusView';
 import FloatingClock from '@/components/FloatingClock';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Menu } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 function AppContent() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -77,13 +79,21 @@ function AppContent() {
 }
 
 export default function Home() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (!mounted || loading || !user) {
     return (
       <div style={{
         display: 'flex',
@@ -111,9 +121,6 @@ export default function Home() {
             marginBottom: '8px',
           }}>
             LifeLine AI
-          </div>
-          <div className="loading-dots" style={{ justifyContent: 'center' }}>
-            <span /><span /><span />
           </div>
         </div>
       </div>
