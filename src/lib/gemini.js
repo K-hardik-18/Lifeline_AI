@@ -33,9 +33,10 @@ export async function executeWithRetry(fn, maxRetries = 3) {
  * Send a single prompt to Groq and get a text response with automatic retries.
  * @param {string} prompt - The user prompt to send.
  * @param {string} [systemInstruction] - Optional system instruction for the model.
+ * @param {boolean} [jsonMode] - Optional flag to force JSON output format.
  * @returns {Promise<string>} The generated text response.
  */
-export async function getGeminiResponse(prompt, systemInstruction) {
+export async function getGeminiResponse(prompt, systemInstruction, jsonMode = false) {
   const messages = [];
   
   if (systemInstruction) {
@@ -49,6 +50,7 @@ export async function getGeminiResponse(prompt, systemInstruction) {
       messages: messages,
       model: MODEL_NAME,
       temperature: 0.5,
+      ...(jsonMode && { response_format: { type: "json_object" } })
     })
   );
   

@@ -8,6 +8,14 @@ export default function FloatingClock() {
   const [time, setTime] = useState(new Date());
   const [clickState, setClickState] = useState(0); // 0: HH:MM:SS, 1: HH:MM, 2: "C" icon
 
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('floatingClockState');
+    if (saved) {
+      setClickState(parseInt(saved, 10));
+    }
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTime(new Date());
@@ -20,7 +28,11 @@ export default function FloatingClock() {
   const dateString = time.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 
   const handleClick = () => {
-    setClickState(prev => (prev + 1) % 3);
+    setClickState(prev => {
+      const nextState = (prev + 1) % 3;
+      localStorage.setItem('floatingClockState', nextState.toString());
+      return nextState;
+    });
   };
 
   return (

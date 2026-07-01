@@ -33,7 +33,7 @@ export async function POST(request) {
 
     const prompt = `Task to break down:\nTitle: ${task.title}${task.description ? `\nDescription: ${task.description}` : ""}`;
 
-    const rawResponse = await getGeminiResponse(prompt, SYSTEM_INSTRUCTION);
+    const rawResponse = await getGeminiResponse(prompt, SYSTEM_INSTRUCTION, true);
     const cleaned = cleanJsonResponse(rawResponse);
 
     let subtasks;

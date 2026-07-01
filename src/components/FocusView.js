@@ -64,6 +64,8 @@ export default function FocusView() {
   // Pomodoro state
   const [workDuration, setWorkDuration] = useState(25);
   const [breakDuration, setBreakDuration] = useState(5);
+  const [workInput, setWorkInput] = useState('25');
+  const [breakInput, setBreakInput] = useState('5');
   const [timeLeft, setTimeLeft] = useState(workDuration * 60);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState('work'); // 'work' | 'break'
@@ -202,10 +204,14 @@ export default function FocusView() {
                     <input 
                       type="number" 
                       className="input" 
-                      value={workDuration}
+                      value={workInput}
                       min={1} max={120}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value) || 25;
+                      onChange={(e) => setWorkInput(e.target.value)}
+                      onBlur={() => {
+                        let val = parseInt(workInput);
+                        if (isNaN(val) || val < 1) val = 1;
+                        if (val > 120) val = 120;
+                        setWorkInput(val.toString());
                         setWorkDuration(val);
                         if (mode === 'work' && !isActive) setTimeLeft(val * 60);
                       }}
@@ -217,10 +223,14 @@ export default function FocusView() {
                     <input 
                       type="number" 
                       className="input" 
-                      value={breakDuration}
+                      value={breakInput}
                       min={1} max={60}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value) || 5;
+                      onChange={(e) => setBreakInput(e.target.value)}
+                      onBlur={() => {
+                        let val = parseInt(breakInput);
+                        if (isNaN(val) || val < 1) val = 1;
+                        if (val > 60) val = 60;
+                        setBreakInput(val.toString());
                         setBreakDuration(val);
                         if (mode === 'break' && !isActive) setTimeLeft(val * 60);
                       }}

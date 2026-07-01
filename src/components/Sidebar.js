@@ -128,6 +128,7 @@ export default function Sidebar({ currentView, onNavigate }) {
           transition: all var(--transition-fast);
           position: relative;
           white-space: nowrap;
+          flex-shrink: 0;
         }
         
         .nav-item:hover {
@@ -155,13 +156,23 @@ export default function Sidebar({ currentView, onNavigate }) {
             display: none;
           }
           .nav-item {
-            padding: var(--space-sm);
+            padding: var(--space-md) var(--space-md);
           }
           .navbar-container {
-            padding: 0 var(--space-md);
+            padding: 0 var(--space-sm);
+          }
+          .logo {
+            font-size: 1.1rem;
+            margin-right: var(--space-md);
+            flex-shrink: 0;
+          }
+          .navbar-nav {
+            gap: var(--space-sm);
+            padding-right: var(--space-md);
           }
         }
       `}</style>
     </header>
   );
 }
+

@@ -1452,3 +1452,37 @@ input, textarea, select {
   background: rgba(239, 68, 68, 0.1);
   color: var(--danger-color);
 }
+
+/* ===== MOBILE RESPONSIVENESS ===== */
+@media (max-width: 768px) {
+  .page-header {
+    padding: var(--space-md);
+  }
+  
+  .page-body {
+    padding: var(--space-md);
+  }
+  
+  .grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .modal {
+    margin: var(--space-sm);
+    max-width: 100%;
+    max-height: calc(100vh - var(--space-xl));
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Ensure floating clock doesn't overlap chat input */
+  .chat-input-area {
+    padding-bottom: 80px;
+  }
+  
+  .main-content {
+    min-height: calc(100vh - 60px);
+  }
+}

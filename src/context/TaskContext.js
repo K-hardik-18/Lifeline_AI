@@ -100,8 +100,20 @@ export function TaskProvider({ children }) {
       if (action === 'delete') {
         await supabase.from('tasks').delete().eq('id', task.id).eq('user_id', user.id);
       } else {
-        const payload = { ...task, user_id: user.id, completed: task.status === 'completed' };
-        // Clean out purely local UI fields if necessary, but JSONB columns are fine
+        const payload = { 
+          id: task.id,
+          user_id: user.id,
+          title: task.title,
+          description: task.description,
+          dueDate: task.dueDate,
+          category: task.category,
+          priority: task.priority,
+          status: task.status,
+          completed: task.status === 'completed',
+          estimatedMinutes: task.estimatedMinutes,
+          subtasks: task.subtasks || [],
+          createdAt: task.createdAt
+        };
         await supabase.from('tasks').upsert(payload);
       }
     } catch (err) {

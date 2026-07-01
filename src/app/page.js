@@ -22,6 +22,21 @@ function AppContent() {
   const [activeView, setActiveView] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      setActiveView(hash);
+    }
+    
+    const handleHashChange = () => {
+      const newHash = window.location.hash.replace('#', '');
+      if (newHash) setActiveView(newHash);
+    };
+    
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const renderView = () => {
     switch (activeView) {
       case 'dashboard':
@@ -51,6 +66,7 @@ function AppContent() {
         currentView={activeView}
         onNavigate={(view) => {
           setActiveView(view);
+          window.location.hash = view;
           setSidebarOpen(false);
         }}
       />

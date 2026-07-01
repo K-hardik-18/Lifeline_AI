@@ -35,7 +35,7 @@ export async function POST(request) {
 
     const prompt = `Today's date and time: ${currentDate}\n\nNatural language input: "${input}"`;
 
-    const rawResponse = await getGeminiResponse(prompt, SYSTEM_INSTRUCTION);
+    const rawResponse = await getGeminiResponse(prompt, SYSTEM_INSTRUCTION, true);
     const cleaned = cleanJsonResponse(rawResponse);
 
     let task;

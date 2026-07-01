@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { useRoutines } from '@/context/RoutineContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Send, User, Bot, Lightbulb, XCircle } from 'lucide-react';
+import { Sparkles, Send, User, Bot, Lightbulb, XCircle, CheckCircle2 } from 'lucide-react';
 import { marked } from 'marked';
 
 const SUGGESTIONS = [
@@ -24,8 +24,8 @@ const WELCOME_MESSAGE = {
 };
 
 export default function ChatView() {
-  const { tasks } = useTasks();
-  const { routines } = useRoutines();
+  const { tasks, addTask } = useTasks();
+  const { routines, addRoutine } = useRoutines();
 
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
@@ -70,11 +70,25 @@ export default function ChatView() {
         if (!res.ok) throw new Error(res.status === 429 ? 'rate_limit' : 'chat_failed');
 
         const data = await res.json();
+        
         const aiMsg = {
           role: 'ai',
           content: data.response || data.message || 'Sorry, I didn\'t get a response.',
           timestamp: new Date(),
+          actions: data.actions || [],
         };
+        
+        // Execute any actions returned by the AI
+        if (data.actions && data.actions.length > 0) {
+          for (const action of data.actions) {
+            if (action.type === 'add_task' && action.payload) {
+              addTask(action.payload);
+            } else if (action.type === 'add_routine' && action.payload) {
+              addRoutine(action.payload);
+            }
+          }
+        }
+        
         setMessages((prev) => [...prev, aiMsg]);
       } catch (err) {
         if (err.message === 'rate_limit') {
@@ -92,7 +106,7 @@ export default function ChatView() {
         setIsLoading(false);
       }
     },
-    [input, isLoading, tasks, routines],
+    [input, isLoading, tasks, routines, addTask, addRoutine],
   );
 
   const handleKeyDown = (e) => {
@@ -180,6 +194,25 @@ export default function ChatView() {
                     className="prose prose-sm max-w-none prose-p:text-sm prose-p:leading-relaxed prose-headings:text-base prose-headings:font-semibold prose-headings:mt-4 prose-headings:mb-2 prose-ul:my-2 prose-li:my-1"
                     dangerouslySetInnerHTML={{ __html: msg.role === 'ai' ? marked.parse(msg.content) : msg.content }} 
                   />
+                  {msg.actions && msg.actions.length > 0 && (
+                    <div style={{ marginTop: 'var(--space-md)', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {msg.actions.map((action, i) => (
+                        <div key={i} style={{ 
+                          display: 'flex', alignItems: 'center', gap: '4px', 
+                          background: 'rgba(16, 185, 129, 0.1)', 
+                          border: '1px solid rgba(16, 185, 129, 0.2)',
+                          color: 'var(--accent-green)',
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-full)',
+                          fontSize: '11px',
+                          fontWeight: 600
+                        }}>
+                          <CheckCircle2 size={12} />
+                          Added {action.type === 'add_task' ? 'Task' : 'Routine'}: {action.payload?.title}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div
                     style={{
                       fontSize: 10,
