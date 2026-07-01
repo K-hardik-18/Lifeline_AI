@@ -321,23 +321,14 @@ export default function NotesView() {
           right: 8px;
           display: flex;
           gap: 4px;
-          opacity: 1; /* Always visible to ensure mobile users can see it */
+          opacity: 1;
           transition: opacity var(--transition-fast);
-        }
-        
-        @media (min-width: 769px) {
-          .note-actions {
-            opacity: 0; /* Hide by default on desktop to keep it clean */
-          }
-          .sticky-note:hover .note-actions {
-            opacity: 1;
-          }
         }
 
         .icon-btn {
           background: rgba(255, 255, 255, 0.4);
           border: none;
-          color: rgba(0,0,0,0.4);
+          color: rgba(0,0,0,0.6);
           cursor: pointer;
           width: 24px;
           height: 24px;
@@ -349,13 +340,13 @@ export default function NotesView() {
         }
         
         .icon-btn:hover {
-          background: rgba(255, 255, 255, 0.8);
-          color: rgba(0,0,0,0.8);
+          background: rgba(255, 255, 255, 1);
+          color: rgba(0,0,0,1);
         }
         
         .delete-btn:hover {
           color: var(--accent-red);
-          background: rgba(239, 68, 68, 0.1);
+          background: rgba(239, 68, 68, 0.2);
         }
         
         .save-btn {
@@ -370,6 +361,8 @@ export default function NotesView() {
           color: #1f2937;
           flex: 1;
           white-space: pre-wrap;
+          word-break: break-word;
+          overflow-wrap: break-word;
           margin-bottom: var(--space-md);
         }
         
