@@ -322,13 +322,15 @@ export default function NotesView() {
           display: flex;
           gap: 4px;
           opacity: 1;
+          z-index: 10;
           transition: opacity var(--transition-fast);
         }
 
         .icon-btn {
-          background: rgba(255, 255, 255, 0.4);
+          background: rgba(255, 255, 255, 0.8);
           border: none;
-          color: rgba(0,0,0,0.6);
+          color: rgba(0,0,0,0.8);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
           cursor: pointer;
           width: 24px;
           height: 24px;

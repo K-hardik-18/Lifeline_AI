@@ -36,9 +36,18 @@ export async function POST(request) {
     const rawResponse = await getGeminiResponse(prompt, SYSTEM_INSTRUCTION, true);
     const cleaned = cleanJsonResponse(rawResponse);
 
-    let subtasks;
+    let subtasks = [];
     try {
-      subtasks = JSON.parse(cleaned);
+      const parsed = JSON.parse(cleaned);
+      if (Array.isArray(parsed)) {
+        subtasks = parsed;
+      } else if (parsed.subtasks && Array.isArray(parsed.subtasks)) {
+        subtasks = parsed.subtasks;
+      } else if (parsed.tasks && Array.isArray(parsed.tasks)) {
+        subtasks = parsed.tasks;
+      } else {
+        subtasks = Object.values(parsed).find(Array.isArray) || [];
+      }
     } catch (parseError) {
       console.error("Failed to parse Gemini JSON response:", cleaned);
       return NextResponse.json(
