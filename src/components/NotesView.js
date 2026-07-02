@@ -19,6 +19,7 @@ export default function NotesView() {
   const [newCategory, setNewCategory] = useState('general');
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
+  const [selectedNote, setSelectedNote] = useState(null);
 
   // Group notes by date, then by category
   const groupedNotes = useMemo(() => {
@@ -141,35 +142,9 @@ export default function NotesView() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       whileHover={{ scale: 1.02, rotate: -1 }}
+                      onClick={() => setSelectedNote(note)}
                     >
-                      <div className="note-actions">
-                        {editingNoteId === note.id ? (
-                          <button className="icon-btn save-btn" onClick={() => handleSaveEdit(note.id)}>
-                            <Check size={14} />
-                          </button>
-                        ) : (
-                          <button className="icon-btn edit-btn" onClick={() => {
-                            setEditingNoteId(note.id);
-                            setEditingContent(note.content);
-                          }}>
-                            <Pencil size={12} />
-                          </button>
-                        )}
-                        <button className="icon-btn delete-btn" onClick={() => deleteNote(note.id)}>
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                      
-                      {editingNoteId === note.id ? (
-                        <textarea
-                          autoFocus
-                          className="note-text-edit"
-                          value={editingContent}
-                          onChange={(e) => setEditingContent(e.target.value)}
-                        />
-                      ) : (
-                        <div className="note-text">{note.content}</div>
-                      )}
+                      <div className="note-text">{note.content}</div>
                       <div className="note-footer">
                         <span className="note-category">{note.category}</span>
                         <span className="note-time">
@@ -184,6 +159,85 @@ export default function NotesView() {
           ))
         )}
       </div>
+
+      <AnimatePresence>
+        {selectedNote && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="modal-overlay" 
+            onClick={() => { setSelectedNote(null); setEditingNoteId(null); }}
+            style={{ zIndex: 100 }}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="modal note-modal" 
+              style={{ backgroundColor: CATEGORY_COLORS[selectedNote.category] }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
+                <h2 className="modal-title" style={{ visibility: 'hidden' }}>Note</h2>
+                <button
+                  className="btn btn-ghost btn-icon"
+                  onClick={() => { setSelectedNote(null); setEditingNoteId(null); }}
+                  style={{ background: 'rgba(255,255,255,0.5)' }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                {editingNoteId === selectedNote.id ? (
+                  <textarea
+                    autoFocus
+                    className="note-text-edit modal-note-edit"
+                    value={editingContent}
+                    onChange={(e) => setEditingContent(e.target.value)}
+                  />
+                ) : (
+                  <div className="note-text modal-note-text">{selectedNote.content}</div>
+                )}
+                <div className="note-footer" style={{ marginTop: 'var(--space-xl)' }}>
+                  <span className="note-category">{selectedNote.category}</span>
+                  <span className="note-time">
+                    {formatDate(selectedNote.date)} · {new Date(selectedNote.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="modal-footer" style={{ borderTop: '1px solid rgba(0,0,0,0.1)', justifyContent: 'flex-end', gap: 'var(--space-sm)' }}>
+                {editingNoteId === selectedNote.id ? (
+                  <>
+                    <button className="btn btn-ghost" onClick={() => setEditingNoteId(null)}>Cancel</button>
+                    <button className="btn btn-primary" onClick={() => {
+                      handleSaveEdit(selectedNote.id);
+                      setSelectedNote(prev => ({ ...prev, content: editingContent }));
+                    }}>Save Changes</button>
+                  </>
+                ) : (
+                  <>
+                    <button className="btn btn-ghost" style={{ color: 'var(--accent-red)' }} onClick={() => {
+                      deleteNote(selectedNote.id);
+                      setSelectedNote(null);
+                    }}>
+                      <Trash2 size={16} /> Delete
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => {
+                      setEditingNoteId(selectedNote.id);
+                      setEditingContent(selectedNote.content);
+                    }}>
+                      <Pencil size={16} /> Edit
+                    </button>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style jsx>{`
         .notes-view {
@@ -301,6 +355,7 @@ export default function NotesView() {
           display: flex;
           flex-direction: column;
           min-height: 150px;
+          cursor: pointer;
         }
 
         /* Fold effect for sticky note */
@@ -366,6 +421,27 @@ export default function NotesView() {
           word-break: break-word;
           overflow-wrap: break-word;
           margin-bottom: var(--space-md);
+          display: -webkit-box;
+          -webkit-line-clamp: 6;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        
+        .modal-note-text {
+          display: block;
+          overflow: visible;
+          -webkit-line-clamp: unset;
+          font-size: 2rem;
+        }
+        
+        .modal-note-edit {
+          font-size: 2rem;
+          height: 300px;
+        }
+        
+        .note-modal {
+          max-width: 600px;
+          width: 90%;
         }
         
         .note-text-edit {
