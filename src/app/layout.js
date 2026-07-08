@@ -2,6 +2,7 @@ import { Inter, Outfit, Caveat } from 'next/font/google';
 import "./globals.css";
 import { RoutineProvider } from "@/context/RoutineContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 const inter = Inter({
   subsets: ['latin'],
@@ -40,11 +41,13 @@ export default function RootLayout({ children }) {
         <meta name="theme-color" content="#FDFBF7" />
       </head>
       <body>
-        <AuthProvider>
-          <RoutineProvider>
-            {children}
-          </RoutineProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <RoutineProvider>
+              {children}
+            </RoutineProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

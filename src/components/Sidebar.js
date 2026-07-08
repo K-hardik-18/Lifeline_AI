@@ -1,13 +1,15 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, CheckSquare, MessageSquare, CalendarDays, BarChart3, PenTool, Sparkles, Timer, Activity, Menu, X } from "lucide-react";
+import { LayoutDashboard, CheckSquare, MessageSquare, CalendarDays, BarChart3, PenTool, Sparkles, Timer, Activity, Menu, X, Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from '@/context/ThemeContext';
 
 import ProfileMenu from './ProfileMenu';
 
 export default function Sidebar({ currentView, onNavigate }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const { theme, toggleTheme } = useTheme() || { theme: 'light', toggleTheme: () => {} };
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -37,8 +39,13 @@ export default function Sidebar({ currentView, onNavigate }) {
           onClick={() => {
             if (isMobile) setIsMobileMenuOpen(!isMobileMenuOpen);
           }}
-          style={{ cursor: isMobile ? 'pointer' : 'default' }}
+          style={{ cursor: isMobile ? 'pointer' : 'default', display: 'flex', alignItems: 'center' }}
         >
+          {isMobile && (
+            <div className="mobile-menu-trigger" style={{ marginRight: '8px' }}>
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </div>
+          )}
           <Sparkles className="logo-icon" size={24} color="var(--accent-purple)" />
           <span>LifeLine AI</span>
         </motion.div>
@@ -105,7 +112,10 @@ export default function Sidebar({ currentView, onNavigate }) {
           )}
         </AnimatePresence>
 
-        <div className="navbar-actions">
+        <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+          <button onClick={toggleTheme} className="btn btn-icon btn-ghost" aria-label="Toggle Dark Mode">
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
           <ProfileMenu />
         </div>
       </div>
