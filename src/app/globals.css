@@ -192,7 +192,7 @@ input, textarea, select {
 .page-header {
   padding: var(--space-lg) var(--space-2xl);
   border-bottom: 1px solid var(--border-color);
-  background: rgba(253,251,247,0.85);
+  background: var(--bg-glass);
   backdrop-filter: blur(20px);
   position: sticky;
   top: 0;
@@ -220,7 +220,7 @@ input, textarea, select {
 
 /* ===== TOP NAVBAR (SIDEBAR.JS) ===== */
 .top-navbar {
-  background: rgba(253, 251, 247, 0.85);
+  background: var(--bg-glass);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-color);
   position: sticky;

@@ -3,10 +3,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
-import { LogOut, User, Check, Edit2, X } from 'lucide-react';
+import { LogOut, User, Check, Edit2, X, Moon, Sun } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function ProfileMenu() {
   const { user, signOut, updateProfileName } = useAuth();
+  const { theme, toggleTheme } = useTheme() || { theme: 'light', toggleTheme: () => {} };
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
@@ -106,6 +108,11 @@ export default function ProfileMenu() {
             </div>
 
             <div className="dropdown-divider" />
+
+            <button className="dropdown-item" onClick={toggleTheme}>
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            </button>
 
             <button className="dropdown-item logout-item" onClick={signOut}>
               <LogOut size={16} />

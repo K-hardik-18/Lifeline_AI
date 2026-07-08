@@ -113,9 +113,6 @@ export default function Sidebar({ currentView, onNavigate }) {
         </AnimatePresence>
 
         <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-          <button onClick={toggleTheme} className="btn btn-icon btn-ghost" aria-label="Toggle Dark Mode">
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
           <ProfileMenu />
         </div>
       </div>
