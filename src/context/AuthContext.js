@@ -7,6 +7,7 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [providerToken, setProviderToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,6 +15,7 @@ export function AuthProvider({ children }) {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
+      setProviderToken(session?.provider_token || null);
       setLoading(false);
     };
     checkUser();
@@ -21,6 +23,7 @@ export function AuthProvider({ children }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
+      setProviderToken(session?.provider_token || null);
       
       // Clear the ugly #access_token from the URL after successful login
       if (_event === 'SIGNED_IN' && window.location.hash.includes('access_token')) {
@@ -35,6 +38,21 @@ export function AuthProvider({ children }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
+        redirectTo: window.location.origin
+      }
+    });
+    if (error) throw error;
+  };
+
+  const connectGoogleCalendar = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        scopes: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
         redirectTo: window.location.origin
       }
     });
@@ -65,7 +83,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInWithOTP, signOut, updateProfileName }}>
+    <AuthContext.Provider value={{ user, providerToken, loading, signInWithGoogle, connectGoogleCalendar, signInWithOTP, signOut, updateProfileName }}>
       {children}
     </AuthContext.Provider>
   );

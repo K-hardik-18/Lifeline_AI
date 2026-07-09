@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, ListTodo, Plus, CheckCircle, Clock, AlertTriangle, Calendar, RefreshCw, CheckCircle2, CalendarDays, Zap, Lightbulb, MessageSquare } from 'lucide-react';
+import { Brain, ListTodo, Plus, CheckCircle, Clock, AlertTriangle, Calendar, RefreshCw, CheckCircle2, CalendarDays, Zap, Lightbulb, MessageSquare, Volume2, Square, CalendarPlus } from 'lucide-react';
 import { marked } from 'marked';
+import { useAuth } from '@/context/AuthContext';
+import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 
 function formatDueDate(dateStr) {
   if (!dateStr) return '';
@@ -58,6 +60,62 @@ export default function Dashboard({ onNavigate }) {
   const [briefing, setBriefing] = useState('');
   const [briefingLoading, setBriefingLoading] = useState(false);
   const [briefingError, setBriefingError] = useState('');
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const { connectGoogleCalendar } = useAuth();
+  const { fetchTodayEvents, createEvent, loading: calLoading, error: calError, isConnected } = useGoogleCalendar();
+  const [calendarEvents, setCalendarEvents] = useState([]);
+  const [schedulingTaskId, setSchedulingTaskId] = useState(null);
+
+  useEffect(() => {
+    if (isConnected) {
+      fetchTodayEvents().then(setCalendarEvents);
+    }
+  }, [isConnected, fetchTodayEvents]);
+
+  const handlePushToCalendar = async (task) => {
+    setSchedulingTaskId(task.id);
+    try {
+      await createEvent(task.title, task.estimatedMinutes || 30);
+      alert(`Successfully scheduled "${task.title}" in Google Calendar!`);
+    } catch (err) {
+      alert('Failed to schedule in calendar.');
+    } finally {
+      setSchedulingTaskId(null);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const toggleSpeech = () => {
+    if (typeof window === 'undefined') return;
+    
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    if (!briefing) return;
+
+    const textToSpeak = briefing.replace(/[#*`_]/g, '');
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = (e) => {
+      console.error('Speech synthesis error', e);
+      setIsSpeaking(false);
+    };
+
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  };
 
   const fetchBriefing = useCallback(async () => {
     if (!tasks.length) return;
@@ -160,15 +218,31 @@ export default function Dashboard({ onNavigate }) {
           <h2 className="section-title flex items-center gap-2">
             <Brain className="text-purple" size={24} /> AI Daily Briefing
           </h2>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="btn btn-ghost"
-            onClick={fetchBriefing}
-            disabled={briefingLoading}
-          >
-            <RefreshCw size={16} className={briefingLoading ? "spin" : ""} /> Refresh
-          </motion.button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {briefing && !briefingLoading && !briefingError && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="btn btn-outline"
+                onClick={toggleSpeech}
+              >
+                {isSpeaking ? (
+                  <><Square size={16} color="var(--accent-red)" /> Stop</>
+                ) : (
+                  <><Volume2 size={16} /> Read Aloud</>
+                )}
+              </motion.button>
+            )}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="btn btn-ghost"
+              onClick={fetchBriefing}
+              disabled={briefingLoading}
+            >
+              <RefreshCw size={16} className={briefingLoading ? "spin" : ""} /> Refresh
+            </motion.button>
+          </div>
         </div>
 
         <div className="briefing-card relative overflow-hidden">
@@ -246,6 +320,58 @@ export default function Dashboard({ onNavigate }) {
         </div>
       </motion.section>
 
+      {/* ── Today's Schedule (Google Calendar) ── */}
+      <motion.section variants={itemVariants} style={{ marginBottom: 'var(--space-2xl)' }}>
+        <div className="section-header">
+          <h2 className="section-title flex items-center gap-2">
+            <CalendarDays className="text-blue" size={24} /> Today&apos;s Schedule
+          </h2>
+          {!isConnected && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="btn btn-outline btn-sm"
+              onClick={connectGoogleCalendar}
+            >
+              <Calendar size={14} /> Connect Google Calendar
+            </motion.button>
+          )}
+        </div>
+
+        {isConnected ? (
+          <div className="card" style={{ padding: 'var(--space-lg)', minHeight: 120 }}>
+            {calLoading && !calendarEvents.length ? (
+               <div className="flex items-center justify-center h-full"><div className="loading-dots"><span></span><span></span><span></span></div></div>
+            ) : calError ? (
+               <div className="text-red flex items-center gap-2"><AlertTriangle size={16} /> {calError}</div>
+            ) : calendarEvents.length > 0 ? (
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                 {calendarEvents.map(ev => {
+                   const start = new Date(ev.start.dateTime || ev.start.date);
+                   const end = new Date(ev.end.dateTime || ev.end.date);
+                   const isAllDay = !ev.start.dateTime;
+                   return (
+                     <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '12px', background: 'var(--bg-primary)', borderRadius: '8px', borderLeft: '4px solid var(--accent-blue)' }}>
+                       <div style={{ minWidth: '85px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                         {isAllDay ? 'All Day' : start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                       </div>
+                       <div style={{ flex: 1, fontWeight: 500 }}>{ev.summary}</div>
+                     </div>
+                   )
+                 })}
+               </div>
+            ) : (
+               <div className="empty-state">No upcoming meetings today. Time to get some deep work done!</div>
+            )}
+          </div>
+        ) : (
+          <div className="card empty-state" style={{ padding: 'var(--space-xl)' }}>
+            <CalendarDays size={32} style={{ color: 'var(--text-tertiary)', marginBottom: 12 }} />
+            <p>Connect your Google Calendar to see your upcoming meetings alongside your tasks.</p>
+          </div>
+        )}
+      </motion.section>
+
       {/* ── Danger Zone ── */}
       {dangerTasks.length > 0 && (
         <motion.section variants={itemVariants} style={{ marginBottom: 'var(--space-2xl)' }}>
@@ -309,6 +435,19 @@ export default function Dashboard({ onNavigate }) {
                           : 'Critical priority — tackle this before anything else.'}
                       </div>
                     </div>
+                    {isConnected && (
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="btn btn-ghost btn-icon"
+                        title="Schedule in Google Calendar"
+                        disabled={schedulingTaskId === task.id}
+                        onClick={() => handlePushToCalendar(task)}
+                        style={{ alignSelf: 'center' }}
+                      >
+                        {schedulingTaskId === task.id ? <span className="spinner" style={{width: 14, height:14, borderTopColor: 'var(--text-primary)'}}/> : <CalendarPlus size={18} className="text-blue" />}
+                      </motion.button>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -382,6 +521,19 @@ export default function Dashboard({ onNavigate }) {
                       )}
                     </div>
                   </div>
+                  {isConnected && (
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="btn btn-ghost btn-icon"
+                      title="Schedule in Google Calendar"
+                      disabled={schedulingTaskId === task.id}
+                      onClick={(e) => { e.stopPropagation(); handlePushToCalendar(task); }}
+                      style={{ marginLeft: 'auto' }}
+                    >
+                      {schedulingTaskId === task.id ? <span className="spinner" style={{width: 14, height:14, borderTopColor: 'var(--text-primary)'}}/> : <CalendarPlus size={18} className="text-blue" />}
+                    </motion.button>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>

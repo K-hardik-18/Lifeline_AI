@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRoutines } from '@/context/RoutineContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Plus, Check, Brain, Sparkles, X, BarChart3, Edit2, CalendarDays, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Activity, Plus, Check, Brain, Sparkles, X, BarChart3, Edit2, CalendarDays, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Trash2, Camera, Image as ImageIcon } from 'lucide-react';
+import { useRef } from 'react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -18,7 +19,207 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
 };
 
+function EditableSuggestionCard({ suggestion, onAdd, onDelete, onUpdate }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedSug, setEditedSug] = useState(suggestion);
+
+  return (
+    <motion.div
+      layout
+      className="card flex flex-col gap-2"
+      style={{ 
+        padding: 'var(--space-md)', 
+        background: isEditing ? 'var(--bg-secondary)' : 'var(--bg-card)', 
+        border: isEditing ? '1px solid var(--border-color)' : '1px solid transparent',
+        marginBottom: '8px' 
+      }}
+    >
+      {isEditing ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+          <input
+            type="text"
+            className="input"
+            value={editedSug.title}
+            onChange={e => setEditedSug({ ...editedSug, title: e.target.value })}
+            placeholder="Habit title"
+          />
+          <textarea
+            className="input"
+            value={editedSug.reason || ''}
+            onChange={e => setEditedSug({ ...editedSug, reason: e.target.value })}
+            placeholder="Reason / Description (optional)"
+            rows={2}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
+            <button className="btn btn-secondary btn-sm" onClick={() => setIsEditing(false)}>Cancel</button>
+            <button className="btn btn-primary btn-sm" onClick={() => { onUpdate(editedSug); setIsEditing(false); }}>Save</button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-start justify-between w-full">
+          <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => setIsEditing(true)}>
+            <div style={{ fontWeight: 500, fontSize: '0.95rem' }}>{suggestion.title}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{suggestion.reason}</div>
+          </div>
+          <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setIsEditing(true)} style={{ color: 'var(--text-tertiary)', padding: '4px' }} title="Edit">
+              <Edit2 size={16} />
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={onDelete} style={{ color: 'var(--accent-red)', padding: '4px' }} title="Delete">
+              <Trash2 size={16} />
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={onAdd} style={{ color: 'var(--accent-blue)', padding: '4px' }} title="Add">
+              <Plus size={16} /> Add
+            </button>
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+function EditableRoutineCard({ routine, isDone, onToggle, onUpdate, onDelete }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState(routine);
+
+  const toggleDay = (dayIdx) => {
+    setFormData(prev => ({
+      ...prev,
+      days: prev.days.includes(dayIdx)
+        ? prev.days.filter(d => d !== dayIdx)
+        : [...prev.days, dayIdx].sort()
+    }));
+  };
+
+  const toggleAllDays = () => {
+    if (formData.days.length === 7) setFormData(prev => ({ ...prev, days: [] }));
+    else setFormData(prev => ({ ...prev, days: [0,1,2,3,4,5,6] }));
+  };
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className={isEditing ? 'card' : `task-item ${isDone ? 'completed' : ''}`}
+      style={isEditing ? { padding: 'var(--space-md)', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', marginBottom: '8px' } : {}}
+    >
+      {isEditing ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="input-group" style={{ flex: 2, marginBottom: 0 }}>
+              <label className="input-label" style={{ fontSize: '0.8rem' }}>Habit Name</label>
+              <input 
+                type="text" 
+                className="input" 
+                value={formData.title}
+                onChange={e => setFormData({...formData, title: e.target.value})}
+              />
+            </div>
+            <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+              <label className="input-label" style={{ fontSize: '0.8rem' }}>Start Date</label>
+              <input 
+                type="date" 
+                className="input" 
+                value={formData.startDate}
+                onChange={e => setFormData({...formData, startDate: e.target.value})}
+              />
+            </div>
+          </div>
+          
+          <div className="input-group" style={{ marginBottom: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <label className="input-label" style={{ marginBottom: 0, fontSize: '0.8rem' }}>Schedule Days</label>
+              <button type="button" onClick={toggleAllDays} style={{ background: 'none', border: 'none', color: 'var(--accent-blue)', fontSize: '0.75rem', cursor: 'pointer' }}>
+                {formData.days.length === 7 ? 'Clear' : 'Everyday'}
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: '4px', justifyContent: 'space-between' }}>
+              {DAYS.map((dayLabel, idx) => {
+                const isSelected = formData.days.includes(idx);
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => toggleDay(idx)}
+                    style={{
+                      flex: 1, height: '32px', borderRadius: '4px',
+                      border: isSelected ? 'none' : '1px solid var(--border-color)',
+                      background: isSelected ? 'var(--gradient-primary)' : 'transparent',
+                      color: isSelected ? '#fff' : 'var(--text-secondary)',
+                      fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s'
+                    }}
+                  >
+                    {dayLabel}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+              <label className="input-label" style={{ fontSize: '0.8rem' }}>Category</label>
+              <select className="select" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                <option value="work">Work</option>
+                <option value="study">Study</option>
+                <option value="personal">Personal</option>
+                <option value="finance">Finance</option>
+                <option value="health">Health</option>
+              </select>
+            </div>
+            <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+              <label className="input-label" style={{ fontSize: '0.8rem' }}>Priority</label>
+              <select className="select" value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value})}>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
+            <button className="btn btn-secondary btn-sm" onClick={() => { setFormData(routine); setIsEditing(false); }}>Cancel</button>
+            <button className="btn btn-primary btn-sm" disabled={!formData.title.trim() || formData.days.length === 0} onClick={() => { onUpdate(formData); setIsEditing(false); }}>Save</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className={`priority-dot priority-${routine.priority}`} />
+          <button
+            className={`task-checkbox ${isDone ? 'checked' : ''}`}
+            onClick={onToggle}
+          >
+            {isDone && <Check size={14} strokeWidth={3} />}
+          </button>
+          
+          <div className="task-content">
+            <h3 className="task-title" style={{ fontSize: '1.05rem' }}>{routine.title}</h3>
+          </div>
+
+          <div className="task-meta">
+            <span className={`badge badge-${routine.category}`}>
+              {routine.category}
+            </span>
+          </div>
+          
+          <div className="task-actions" style={{ marginLeft: 'var(--space-md)', gap: '4px' }}>
+            <button className="btn btn-ghost btn-icon" onClick={() => setIsEditing(true)} title="Edit Habit">
+              <Edit2 size={16} />
+            </button>
+            <button className="btn btn-ghost btn-icon" onClick={onDelete} title="Delete Habit">
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </>
+      )}
+    </motion.div>
+  );
+}
 
 export default function RoutineView() {
   const { routines, toggleRoutineForDate, addRoutine, updateRoutine, deleteRoutine, getProgressForDate, getTopicAnalytics, getRoutineHistoryStats, getTimeframeAggregate } = useRoutines();
@@ -34,6 +235,28 @@ export default function RoutineView() {
   
   const [aiLoading, setAiLoading] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState(null);
+
+  // Vision AI state
+  const [showVisionModal, setShowVisionModal] = useState(false);
+  const [visionPreview, setVisionPreview] = useState(null);
+  const [visionLoading, setVisionLoading] = useState(false);
+  const [visionResults, setVisionResults] = useState(null);
+  const [visionError, setVisionError] = useState('');
+  const [smartSuccess, setSmartSuccess] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setVisionPreview(e.target.result);
+      setShowVisionModal(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = null; // reset
+  };
 
   const getLocalDateStr = (date = new Date()) => {
     const offset = date.getTimezoneOffset();
@@ -161,23 +384,42 @@ export default function RoutineView() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
             {/* AI Analysis Section */}
             <motion.div variants={itemVariants} className="briefing-card" style={{ padding: 'var(--space-lg)' }}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="flex items-center gap-2" style={{ fontWeight: 600, color: 'var(--accent-purple)' }}>
-                  <Brain size={20} /> AI Habit Coach
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+                <h3 className="flex items-center gap-2" style={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                  <Sparkles size={20} className="text-blue" /> Smart Habit Analysis
                 </h3>
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="btn btn-ghost btn-sm"
-                  onClick={handleAiAnalysis}
-                  disabled={aiLoading || routines.length === 0}
-                >
-                  {aiLoading ? (
-                    <span className="flex items-center gap-2"><Sparkles className="spin" size={14}/> Analyzing...</span>
-                  ) : (
-                    <span className="flex items-center gap-2"><Sparkles size={14}/> Analyze My Routines</span>
-                  )}
-                </motion.button>
+                
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="btn btn-ghost btn-sm"
+                    onClick={handleAiAnalysis}
+                    disabled={aiLoading || routines.length === 0}
+                  >
+                    {aiLoading ? (
+                      <span className="flex items-center gap-2"><Sparkles className="spin" size={14}/> Analyzing...</span>
+                    ) : (
+                      <span className="flex items-center gap-2"><Sparkles size={14}/> Analyze Routines</span>
+                    )}
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="btn btn-primary btn-sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <span className="flex items-center gap-2"><Camera size={14}/> Snap Habits</span>
+                  </motion.button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={handleFileUpload}
+                  />
+                </div>
               </div>
               
               {aiAnalysis ? (
@@ -190,15 +432,30 @@ export default function RoutineView() {
                         <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-sm)' }}>Suggested Habits to Add:</h4>
                         <div className="flex flex-col gap-2">
                           {aiAnalysis.suggestions.map((sug, idx) => (
-                            <div key={idx} className="card flex items-center justify-between" style={{ padding: 'var(--space-sm) var(--space-md)', background: 'var(--bg-secondary)' }}>
-                              <div>
-                                <div style={{ fontWeight: 500, fontSize: '0.95rem' }}>{sug.title}</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{sug.reason}</div>
-                              </div>
-                              <button className="btn btn-ghost btn-sm" onClick={() => acceptAiSuggestion(sug)} style={{ color: 'var(--accent-blue)' }}>
-                                <Plus size={16} /> Add
-                              </button>
-                            </div>
+                            <EditableSuggestionCard
+                              key={idx}
+                              suggestion={sug}
+                              onUpdate={(updatedSug) => {
+                                setAiAnalysis(prev => {
+                                  const newSugs = [...prev.suggestions];
+                                  newSugs[idx] = updatedSug;
+                                  return { ...prev, suggestions: newSugs };
+                                });
+                              }}
+                              onDelete={() => {
+                                setAiAnalysis(prev => ({
+                                  ...prev,
+                                  suggestions: prev.suggestions.filter((_, i) => i !== idx)
+                                }));
+                              }}
+                              onAdd={() => {
+                                acceptAiSuggestion(sug);
+                                setAiAnalysis(prev => ({
+                                  ...prev,
+                                  suggestions: prev.suggestions.filter((_, i) => i !== idx)
+                                }));
+                              }}
+                            />
                           ))}
                         </div>
                       </div>
@@ -248,41 +505,14 @@ export default function RoutineView() {
                     {todaysRoutines.map((routine) => {
                       const isDone = !!routine.logs[todayStr];
                       return (
-                        <motion.div
+                        <EditableRoutineCard
                           key={routine.id}
-                          layout
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          className={`task-item ${isDone ? 'completed' : ''}`}
-                        >
-                          <div className={`priority-dot priority-${routine.priority}`} />
-                          <button
-                            className={`task-checkbox ${isDone ? 'checked' : ''}`}
-                            onClick={() => toggleRoutineForDate(routine.id, todayStr)}
-                          >
-                            {isDone && <Check size={14} strokeWidth={3} />}
-                          </button>
-                          
-                          <div className="task-content">
-                            <h3 className="task-title" style={{ fontSize: '1.05rem' }}>{routine.title}</h3>
-                          </div>
-
-                          <div className="task-meta">
-                            <span className={`badge badge-${routine.category}`}>
-                              {routine.category}
-                            </span>
-                          </div>
-                          
-                          <div className="task-actions" style={{ marginLeft: 'var(--space-md)', gap: '4px' }}>
-                            <button className="btn btn-ghost btn-icon" onClick={() => openEditModal(routine)} title="Edit Habit">
-                              <Edit2 size={16} />
-                            </button>
-                            <button className="btn btn-ghost btn-icon" onClick={() => deleteRoutine(routine.id)} title="Delete Habit">
-                              <X size={16} />
-                            </button>
-                          </div>
-                        </motion.div>
+                          routine={routine}
+                          isDone={isDone}
+                          onToggle={() => toggleRoutineForDate(routine.id, todayStr)}
+                          onUpdate={(updatedData) => updateRoutine(routine.id, updatedData)}
+                          onDelete={() => deleteRoutine(routine.id)}
+                        />
                       );
                     })}
                   </AnimatePresence>
@@ -597,6 +827,181 @@ export default function RoutineView() {
               </form>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Vision AI Modal ── */}
+      <AnimatePresence>
+        {showVisionModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="modal-overlay"
+            onClick={() => { if (!visionLoading) { setShowVisionModal(false); setVisionPreview(null); setVisionResults(null); } }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              className="modal-content"
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: 900, maxHeight: '85vh', overflowY: 'auto' }}
+            >
+              <div className="modal-header">
+                <h3 className="modal-title flex items-center gap-2">
+                  <Camera size={20} className="text-purple" /> Vision AI — Extract Habits
+                </h3>
+                <button className="btn btn-ghost" onClick={() => { if (!visionLoading) { setShowVisionModal(false); setVisionPreview(null); setVisionResults(null); } }}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div style={{ padding: 'var(--space-lg)' }}>
+                {visionError && (
+                  <div style={{ padding: 'var(--space-md)', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-red)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-md)' }}>
+                    {visionError}
+                  </div>
+                )}
+                {smartSuccess && (
+                  <div style={{ padding: 'var(--space-md)', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-green)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-md)' }}>
+                    Successfully added habits!
+                  </div>
+                )}
+
+                {/* Image Preview */}
+                {visionPreview && (
+                  <div style={{ marginBottom: 'var(--space-lg)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                    <img src={visionPreview} alt="Uploaded" style={{ width: '100%', maxHeight: 300, objectFit: 'contain', background: 'var(--bg-secondary)' }} />
+                  </div>
+                )}
+
+                {/* Extract Button */}
+                {!visionResults && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="btn btn-primary"
+                    style={{ width: '100%', padding: '12px', fontSize: 15 }}
+                    disabled={visionLoading}
+                    onClick={async () => {
+                      setVisionLoading(true);
+                      setVisionError('');
+                      try {
+                        const mimeMatch = visionPreview.match(/data:(image\/\w+);/);
+                        const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+
+                        const res = await fetch('/api/ai/vision', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ image: visionPreview, mimeType, type: 'routine' }),
+                        });
+
+                        if (!res.ok) throw new Error('vision_failed');
+
+                        const data = await res.json();
+                        if (data.suggestions && data.suggestions.length > 0) {
+                          setVisionResults(data.suggestions);
+                        } else {
+                          setVisionResults([]);
+                          setVisionError(data.message || 'No habits found in this image. Try a clearer photo.');
+                        }
+                      } catch (err) {
+                        setVisionError('Vision AI failed to process this image. Please try again.');
+                      } finally {
+                        setVisionLoading(false);
+                      }
+                    }}
+                  >
+                    {visionLoading ? (
+                      <>
+                        <span className="spinner" style={{ width: 18, height: 18, borderTopColor: '#fff' }} />
+                        Analyzing image...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={18} /> Extract Habits from Image
+                      </>
+                    )}
+                  </motion.button>
+                )}
+
+                {/* Results */}
+                {visionResults && visionResults.length > 0 && (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-md)' }}>
+                      <span style={{ fontWeight: 700, fontSize: 15 }}>
+                        Found {visionResults.length} habit{visionResults.length > 1 ? 's' : ''}
+                      </span>
+                      <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="btn btn-primary"
+                        style={{ fontSize: 13 }}
+                        onClick={() => {
+                          visionResults.forEach((sug) => {
+                            addRoutine({
+                              title: sug.title,
+                              category: sug.category || 'personal',
+                              priority: sug.priority || 'medium',
+                              days: [0, 1, 2, 3, 4, 5, 6], // everyday default for extracted
+                              startDate: new Date().toISOString().split('T')[0]
+                            });
+                          });
+                          setShowVisionModal(false);
+                          setVisionPreview(null);
+                          setVisionResults(null);
+                          setSmartSuccess(true);
+                          setTimeout(() => setSmartSuccess(false), 3000);
+                        }}
+                      >
+                        <Plus size={14} /> Add All Habits
+                      </motion.button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                      {visionResults.map((sug, index) => (
+                        <EditableSuggestionCard
+                          key={index}
+                          suggestion={sug}
+                          onUpdate={(updatedSug) => {
+                            setVisionResults(prev => {
+                              const newArr = [...prev];
+                              newArr[index] = updatedSug;
+                              return newArr;
+                            });
+                          }}
+                          onDelete={() => {
+                            setVisionResults(prev => prev.filter((_, i) => i !== index));
+                          }}
+                          onAdd={() => {
+                            addRoutine({
+                              title: sug.title,
+                              category: sug.category || 'personal',
+                              priority: sug.priority || 'medium',
+                              days: [0, 1, 2, 3, 4, 5, 6],
+                              startDate: new Date().toISOString().split('T')[0]
+                            });
+                            setVisionResults(prev => prev.filter((_, i) => i !== index));
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* No results message */}
+                {visionResults && visionResults.length === 0 && (
+                  <div className="empty-state" style={{ padding: 'var(--space-xl)' }}>
+                    <ImageIcon size={40} style={{ color: 'var(--text-tertiary)', marginBottom: 8 }} />
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
+                      No actionable habits were found in this image. Try a clearer photo with visible text or a written list.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </motion.div>

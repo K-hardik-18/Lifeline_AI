@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { useRoutines } from '@/context/RoutineContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Send, User, Bot, Lightbulb, XCircle, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Send, User, Bot, Lightbulb, XCircle, CheckCircle2, Mic } from 'lucide-react';
 import { marked } from 'marked';
 
 const SUGGESTIONS = [
@@ -31,9 +31,11 @@ export default function ChatView() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isListening, setIsListening] = useState(false);
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -108,6 +110,59 @@ export default function ChatView() {
     },
     [input, isLoading, tasks, routines, addTask, addRoutine],
   );
+
+  const toggleListening = useCallback(() => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setError('Voice recognition is not supported in this browser. Try Chrome or Edge.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setError('');
+    };
+
+    recognition.onresult = (event) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+           transcript += event.results[i][0].transcript;
+        }
+      }
+      if (transcript) {
+        setInput(prev => prev + (prev.endsWith(' ') || prev.length === 0 ? '' : ' ') + transcript);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+      if (event.error === 'not-allowed') {
+        setError('Microphone access denied. Please allow microphone permissions.');
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  }, [isListening]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -323,6 +378,21 @@ export default function ChatView() {
               disabled={isLoading}
               rows={1}
             />
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`btn btn-icon ${isListening ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'btn-ghost'}`}
+              onClick={toggleListening}
+              disabled={isLoading}
+              title={isListening ? "Stop listening" : "Start Voice Typing"}
+              style={{
+                color: isListening ? 'var(--accent-red)' : 'var(--text-secondary)',
+                background: isListening ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
+                border: isListening ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid transparent',
+              }}
+            >
+              <Mic size={18} className={isListening ? 'animate-pulse' : ''} />
+            </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
