@@ -62,6 +62,7 @@ export default function TaskManager() {
   const [smartLoading, setSmartLoading] = useState(false);
   const [smartSuccess, setSmartSuccess] = useState(false);
   const [prioritizeLoading, setPrioritizeLoading] = useState(false);
+  const [prioritizeSuccess, setPrioritizeSuccess] = useState(false);
   const [expandedTaskId, setExpandedTaskId] = useState(null);
   const [subtasks, setSubtasks] = useState({});
   const [breakdownLoading, setBreakdownLoading] = useState(null);
@@ -91,22 +92,35 @@ export default function TaskManager() {
     return true;
   };
 
-  // --- Filtered tasks ---
-  const filteredTasks = tasks.filter((task) => {
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      if (
-        !task.title.toLowerCase().includes(q) &&
-        !(task.description || '').toLowerCase().includes(q)
-      )
-        return false;
-    }
-    if (activeFilter === 'pending') return task.status !== 'completed';
-    if (activeFilter === 'completed') return task.status === 'completed';
-    if (activeFilter === 'critical')
-      return task.priority === 'critical' && task.status !== 'completed';
-    return true;
-  });
+  // --- Filtered & Sorted tasks ---
+  const priorityWeight = { critical: 4, high: 3, medium: 2, low: 1 };
+  
+  const filteredTasks = tasks
+    .filter((task) => {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        if (
+          !task.title.toLowerCase().includes(q) &&
+          !(task.description || '').toLowerCase().includes(q)
+        )
+          return false;
+      }
+      if (activeFilter === 'pending') return task.status !== 'completed';
+      if (activeFilter === 'completed') return task.status === 'completed';
+      if (activeFilter === 'critical')
+        return task.priority === 'critical' && task.status !== 'completed';
+      return true;
+    })
+    .sort((a, b) => {
+      const pA = priorityWeight[a.priority] || 0;
+      const pB = priorityWeight[b.priority] || 0;
+      if (pA !== pB) return pB - pA;
+      
+      if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate);
+      if (a.dueDate) return -1;
+      if (b.dueDate) return 1;
+      return 0;
+    });
 
   // --- AI Smart Add ---
   const handleSmartAdd = useCallback(
@@ -170,6 +184,8 @@ export default function TaskManager() {
         data.prioritizedTasks.forEach((pt) => {
           updateTask(pt.id, { priority: pt.priority });
         });
+        setPrioritizeSuccess(true);
+        setTimeout(() => setPrioritizeSuccess(false), 3000);
       }
     } catch (err) {
       if (err.message === 'rate_limit') {
@@ -341,6 +357,32 @@ export default function TaskManager() {
               <button className="btn btn-ghost" onClick={() => setError('')}>
                 <X size={16} />
               </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Success */}
+        <AnimatePresence>
+          {prioritizeSuccess && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="card"
+              style={{
+                borderColor: 'var(--accent-green)',
+                background: 'rgba(16, 185, 129, 0.05)',
+                marginBottom: 'var(--space-lg)',
+                padding: 'var(--space-md) var(--space-lg)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <Check size={16} style={{ color: 'var(--accent-green)' }} />
+              <span style={{ color: 'var(--accent-green)', fontSize: 14, fontWeight: 500 }}>
+                AI has successfully reorganized your tasks by priority!
+              </span>
             </motion.div>
           )}
         </AnimatePresence>
