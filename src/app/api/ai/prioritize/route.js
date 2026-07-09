@@ -40,7 +40,16 @@ export async function POST(request) {
 
     let prioritizedTasks;
     try {
-      prioritizedTasks = JSON.parse(cleaned);
+      const parsed = JSON.parse(cleaned);
+      if (Array.isArray(parsed)) {
+        prioritizedTasks = parsed;
+      } else if (parsed.prioritizedTasks && Array.isArray(parsed.prioritizedTasks)) {
+        prioritizedTasks = parsed.prioritizedTasks;
+      } else if (parsed.tasks && Array.isArray(parsed.tasks)) {
+        prioritizedTasks = parsed.tasks;
+      } else {
+        throw new Error("Invalid structure returned by AI");
+      }
     } catch (parseError) {
       console.error("Failed to parse Gemini JSON response:", cleaned);
       return NextResponse.json(

@@ -887,7 +887,7 @@ input, textarea, select {
 .chat-input-area {
   padding: var(--space-lg);
   border-top: 1px solid var(--border-color);
-  background: rgba(253,251,247,0.85);
+  background: var(--bg-glass);
   backdrop-filter: blur(20px);
 }
 
