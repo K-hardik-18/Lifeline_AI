@@ -95,7 +95,7 @@ function EditableVisionTaskCard({ task, onAdd, onDelete, onUpdate }) {
             placeholder="Description (optional)"
             rows={2}
           />
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <select
               className="select"
               value={editedTask.category || 'work'}
@@ -433,7 +433,7 @@ export default function TaskManager() {
       <div className="page-header">
         <div className="page-header-content">
           <div>
-            <h1 className="page-title flex items-center gap-2">
+            <h1 className="page-title flex items-center gap-2" style={{ whiteSpace: 'nowrap', fontSize: 'clamp(1.2rem, 5vw, 1.8rem)' }}>
               <LayoutList className="text-blue" /> My Tasks
             </h1>
             <p className="page-subtitle">
@@ -442,21 +442,7 @@ export default function TaskManager() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="btn btn-secondary"
-              onClick={handlePrioritize}
-              disabled={prioritizeLoading}
-            >
-              {prioritizeLoading ? (
-                <>
-                  <span className="spinner" style={{ width: 14, height: 14 }} /> Prioritizing…
-                </>
-              ) : (
-                <><Brain size={16} /> AI Prioritize</>
-              )}
-            </motion.button>
+
             <motion.button 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -628,15 +614,31 @@ export default function TaskManager() {
               </button>
             ))}
           </div>
-          <div className="relative flex items-center">
-            <Search size={16} className="absolute left-3 text-secondary pointer-events-none" style={{ color: 'var(--text-tertiary)' }} />
-            <input
-              className="input"
-              placeholder="Search tasks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ maxWidth: 260, paddingLeft: 36 }}
-            />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: 1, justifyContent: 'flex-end', minWidth: '200px', flexWrap: 'nowrap' }}>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="btn btn-secondary btn-sm"
+              onClick={handlePrioritize}
+              disabled={prioritizeLoading}
+              style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+            >
+              {prioritizeLoading ? (
+                <><span className="spinner" style={{ width: 14, height: 14 }} /> Prioritizing…</>
+              ) : (
+                <><Brain size={14} /> AI Prioritize</>
+              )}
+            </motion.button>
+            <div style={{ position: 'relative', flex: 1, maxWidth: '260px', display: 'flex', alignItems: 'center' }}>
+              <Search size={16} style={{ position: 'absolute', left: '12px', color: 'var(--text-tertiary)', pointerEvents: 'none' }} />
+              <input
+                className="input"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: '100%', paddingLeft: '36px', margin: 0 }}
+              />
+            </div>
           </div>
         </motion.div>
 

@@ -20,8 +20,32 @@ const itemVariants = {
 };
 
 function EditableSuggestionCard({ suggestion, onAdd, onDelete, onUpdate }) {
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const [isEditing, setIsEditing] = useState(false);
-  const [editedSug, setEditedSug] = useState(suggestion);
+  const [editedSug, setEditedSug] = useState({
+    ...suggestion,
+    category: suggestion.category || 'personal',
+    priority: suggestion.priority || 'medium',
+    days: suggestion.days || [0, 1, 2, 3, 4, 5, 6],
+    startDate: suggestion.startDate || new Date().toISOString().split('T')[0],
+  });
+
+  const toggleDay = (dayIndex) => {
+    setEditedSug(prev => ({
+      ...prev,
+      days: prev.days.includes(dayIndex)
+        ? prev.days.filter(d => d !== dayIndex)
+        : [...prev.days, dayIndex].sort()
+    }));
+  };
+
+  const toggleAllDays = () => {
+    if (editedSug.days.length === 7) {
+      setEditedSug({ ...editedSug, days: [] });
+    } else {
+      setEditedSug({ ...editedSug, days: [0, 1, 2, 3, 4, 5, 6] });
+    }
+  };
 
   return (
     <motion.div
@@ -35,14 +59,80 @@ function EditableSuggestionCard({ suggestion, onAdd, onDelete, onUpdate }) {
       }}
     >
       {isEditing ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-          <input
-            type="text"
-            className="input"
-            value={editedSug.title}
-            onChange={e => setEditedSug({ ...editedSug, title: e.target.value })}
-            placeholder="Habit title"
-          />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            <div className="input-group" style={{ flex: 2, marginBottom: 0 }}>
+              <label className="input-label" style={{ fontSize: '0.8rem' }}>Routine Name</label>
+              <input 
+                type="text" 
+                className="input" 
+                value={editedSug.title}
+                onChange={e => setEditedSug({...editedSug, title: e.target.value})}
+              />
+            </div>
+            <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+              <label className="input-label" style={{ fontSize: '0.8rem' }}>Start Date</label>
+              <input 
+                type="date" 
+                className="input" 
+                value={editedSug.startDate}
+                onChange={e => setEditedSug({...editedSug, startDate: e.target.value})}
+              />
+            </div>
+          </div>
+          
+          <div className="input-group" style={{ marginBottom: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <label className="input-label" style={{ marginBottom: 0, fontSize: '0.8rem' }}>Schedule Days</label>
+              <button type="button" onClick={toggleAllDays} style={{ background: 'none', border: 'none', color: 'var(--accent-blue)', fontSize: '0.75rem', cursor: 'pointer' }}>
+                {editedSug.days.length === 7 ? 'Clear' : 'Everyday'}
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: '4px', justifyContent: 'space-between' }}>
+              {DAYS.map((dayLabel, idx) => {
+                const isSelected = editedSug.days.includes(idx);
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => toggleDay(idx)}
+                    style={{
+                      flex: 1, height: '32px', borderRadius: '4px',
+                      border: isSelected ? 'none' : '1px solid var(--border-color)',
+                      background: isSelected ? 'var(--gradient-primary)' : 'transparent',
+                      color: isSelected ? '#fff' : 'var(--text-secondary)',
+                      fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s'
+                    }}
+                  >
+                    {dayLabel}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+              <label className="input-label" style={{ fontSize: '0.8rem' }}>Category</label>
+              <select className="select" value={editedSug.category} onChange={e => setEditedSug({...editedSug, category: e.target.value})}>
+                <option value="work">Work</option>
+                <option value="study">Study</option>
+                <option value="personal">Personal</option>
+                <option value="finance">Finance</option>
+                <option value="health">Health</option>
+              </select>
+            </div>
+            <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+              <label className="input-label" style={{ fontSize: '0.8rem' }}>Priority</label>
+              <select className="select" value={editedSug.priority} onChange={e => setEditedSug({...editedSug, priority: e.target.value})}>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </div>
+          
           <textarea
             className="input"
             value={editedSug.reason || ''}
@@ -50,6 +140,7 @@ function EditableSuggestionCard({ suggestion, onAdd, onDelete, onUpdate }) {
             placeholder="Reason / Description (optional)"
             rows={2}
           />
+
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
             <button className="btn btn-secondary btn-sm" onClick={() => setIsEditing(false)}>Cancel</button>
             <button className="btn btn-primary btn-sm" onClick={() => { onUpdate(editedSug); setIsEditing(false); }}>Save</button>
@@ -109,7 +200,7 @@ function EditableRoutineCard({ routine, isDone, onToggle, onUpdate, onDelete }) 
     >
       {isEditing ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <div className="input-group" style={{ flex: 2, marginBottom: 0 }}>
               <label className="input-label" style={{ fontSize: '0.8rem' }}>Habit Name</label>
               <input 
@@ -160,7 +251,7 @@ function EditableRoutineCard({ routine, isDone, onToggle, onUpdate, onDelete }) 
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
               <label className="input-label" style={{ fontSize: '0.8rem' }}>Category</label>
               <select className="select" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
@@ -358,7 +449,7 @@ export default function RoutineView() {
           className="btn btn-primary"
           onClick={openAddModal}
         >
-          <Plus size={16} /> New Habit
+          <Plus size={16} /> New Routine
         </motion.button>
       </div>
 
@@ -384,12 +475,12 @@ export default function RoutineView() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
             {/* AI Analysis Section */}
             <motion.div variants={itemVariants} className="briefing-card" style={{ padding: 'var(--space-lg)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', gap: '12px' }}>
                 <h3 className="flex items-center gap-2" style={{ fontWeight: 600, fontSize: '1.1rem' }}>
                   <Sparkles size={20} className="text-blue" /> Smart Habit Analysis
                 </h3>
                 
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}

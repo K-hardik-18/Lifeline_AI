@@ -85,8 +85,8 @@ export default function Sidebar({ currentView, onNavigate }) {
           {isMobile && isMobileMenuOpen && (
             <motion.div
               className="mobile-vertical-menu"
-              initial={{ opacity: 0, x: -20, y: 70 }}
-              animate={{ opacity: 1, x: 0, y: 70 }}
+              initial={{ opacity: 0, x: -20, y: 0 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
               exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
             >
               <div className="mobile-menu-inner">
