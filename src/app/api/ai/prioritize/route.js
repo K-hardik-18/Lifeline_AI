@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { getGeminiResponse } from "@/lib/gemini";
+import { getGroqResponse } from "@/lib/groq";
 
-const SYSTEM_INSTRUCTION = `Analyze these tasks and return a JSON array of objects with: {id, priority: 'critical'|'high'|'medium'|'low', reason: string, suggestedAction: string}. Consider due dates, importance, and dependencies. Return ONLY valid JSON, no markdown.`;
+const SYSTEM_INSTRUCTION = `Analyze these tasks and return a JSON object with a single key "prioritizedTasks" containing an array of objects with: {id, priority: 'critical'|'high'|'medium'|'low', reason: string, suggestedAction: string}. Consider due dates, importance, and dependencies. Return ONLY valid JSON.`;
 
 /**
  * Strip markdown code block fences from Gemini output if present.
@@ -35,7 +35,7 @@ export async function POST(request) {
 
     const prompt = `Current date/time: ${currentTime}\n\nTasks to prioritize:\n${JSON.stringify(tasks, null, 2)}`;
 
-    const rawResponse = await getGeminiResponse(prompt, SYSTEM_INSTRUCTION);
+    const rawResponse = await getGroqResponse(prompt, SYSTEM_INSTRUCTION);
     const cleaned = cleanJsonResponse(rawResponse);
 
     let prioritizedTasks;
