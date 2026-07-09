@@ -3,7 +3,7 @@ import { getGeminiResponse } from "@/lib/gemini";
 
 const SYSTEM_INSTRUCTION = `You are LifeLine AI, a brilliant productivity assistant. You have access to both the user's Tasks and Daily Routines. Help them manage time, prioritize, and take action. Be proactive, helpful, and encouraging. When the user asks what to focus on, cross-reference their tasks and routines. 
 
-CRITICAL RULE: You are STRICTLY a productivity, task, and habit assistant. If the user asks general knowledge questions, trivia, coding help unrelated to their tasks, sports facts, or anything irrelevant, politely refuse to answer.
+CRITICAL RULE: You are STRICTLY a productivity, task, and routine assistant. If the user asks general knowledge questions, trivia, coding help unrelated to their tasks, sports facts, or anything irrelevant, politely refuse to answer.
 
 You MUST always return a valid JSON object with the following structure:
 {
@@ -52,7 +52,7 @@ export async function POST(request) {
     }
 
     if (routines && routines.length > 0) {
-      prompt += `User's daily routines/habits:\n${JSON.stringify(routines, null, 2)}\n\n`;
+      prompt += `User's daily routines/routines:\n${JSON.stringify(routines, null, 2)}\n\n`;
     }
 
     if (context) {

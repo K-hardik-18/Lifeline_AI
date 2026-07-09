@@ -202,7 +202,7 @@ function EditableRoutineCard({ routine, isDone, onToggle, onUpdate, onDelete }) 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <div className="input-group" style={{ flex: 2, marginBottom: 0 }}>
-              <label className="input-label" style={{ fontSize: '0.8rem' }}>Habit Name</label>
+              <label className="input-label" style={{ fontSize: '0.8rem' }}>Routine Name</label>
               <input 
                 type="text" 
                 className="input" 
@@ -299,10 +299,10 @@ function EditableRoutineCard({ routine, isDone, onToggle, onUpdate, onDelete }) 
           </div>
           
           <div className="task-actions" style={{ marginLeft: 'var(--space-md)', gap: '4px' }}>
-            <button className="btn btn-ghost btn-icon" onClick={() => setIsEditing(true)} title="Edit Habit">
+            <button className="btn btn-ghost btn-icon" onClick={() => setIsEditing(true)} title="Edit Routine">
               <Edit2 size={16} />
             </button>
-            <button className="btn btn-ghost btn-icon" onClick={onDelete} title="Delete Habit">
+            <button className="btn btn-ghost btn-icon" onClick={onDelete} title="Delete Routine">
               <Trash2 size={16} />
             </button>
           </div>
@@ -441,7 +441,7 @@ export default function RoutineView() {
     <motion.div className="page-body" variants={containerVariants} initial="hidden" animate="show">
       <div className="section-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
         <h2 className="section-title flex items-center gap-2">
-          <Activity className="text-purple" size={24} /> Daily Habits & Routines
+          <Activity className="text-purple" size={24} /> Daily Routines & Routines
         </h2>
         <motion.button
           whileHover={{ scale: 1.05 }}
@@ -477,7 +477,7 @@ export default function RoutineView() {
             <motion.div variants={itemVariants} className="briefing-card" style={{ padding: 'var(--space-lg)' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', gap: '12px' }}>
                 <h3 className="flex items-center gap-2" style={{ fontWeight: 600, fontSize: '1.1rem' }}>
-                  <Sparkles size={20} className="text-blue" /> Smart Habit Analysis
+                  <Sparkles size={20} className="text-blue" /> Smart Routine Analysis
                 </h3>
                 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -500,7 +500,7 @@ export default function RoutineView() {
                     className="btn btn-primary btn-sm"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <span className="flex items-center gap-2"><Camera size={14}/> Snap Habits</span>
+                    <span className="flex items-center gap-2"><Camera size={14}/> Snap Routines</span>
                   </motion.button>
                   <input
                     type="file"
@@ -520,7 +520,7 @@ export default function RoutineView() {
                     
                     {aiAnalysis.suggestions && aiAnalysis.suggestions.length > 0 && (
                       <div style={{ marginTop: 'var(--space-md)' }}>
-                        <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-sm)' }}>Suggested Habits to Add:</h4>
+                        <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-sm)' }}>Suggested Routines to Add:</h4>
                         <div className="flex flex-col gap-2">
                           {aiAnalysis.suggestions.map((sug, idx) => (
                             <EditableSuggestionCard
@@ -555,7 +555,7 @@ export default function RoutineView() {
                 </AnimatePresence>
               ) : (
                 <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>
-                  Click analyze to get personalized insights and new habit recommendations based on your completion consistency.
+                  Click analyze to get personalized insights and new routine recommendations based on your completion consistency.
                 </p>
               )}
             </motion.div>
@@ -588,7 +588,7 @@ export default function RoutineView() {
               {todaysRoutines.length === 0 ? (
                 <div className="empty-state" style={{ padding: 'var(--space-xl)' }}>
                   <Activity size={32} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }} />
-                  <p>No routines scheduled for today. Take a break or add a new habit!</p>
+                  <p>No routines scheduled for today. Take a break or add a new routine!</p>
                 </div>
               ) : (
                 <div className="task-list">
@@ -647,7 +647,7 @@ export default function RoutineView() {
                 </div>
               </div>
               <p style={{ marginTop: 'var(--space-md)', color: 'var(--text-secondary)', fontSize: '0.9rem', textAlign: 'center' }}>
-                {todayProgress === 100 ? (isActuallyToday ? "Perfect day! You crushed all your habits! 🎉" : "Perfect day! You crushed it! 🎉") : (isActuallyToday ? "Keep going, build that momentum!" : "You missed some habits this day.")}
+                {todayProgress === 100 ? (isActuallyToday ? "Perfect day! You crushed all your routines! 🎉" : "Perfect day! You crushed it! 🎉") : (isActuallyToday ? "Keep going, build that momentum!" : "You missed some routines this day.")}
               </p>
             </div>
 
@@ -807,7 +807,7 @@ export default function RoutineView() {
               onClick={e => e.stopPropagation()}
             >
               <div className="modal-header">
-                <h2 className="modal-title">{formData.id ? 'Edit Habit' : 'Create Daily Habit'}</h2>
+                <h2 className="modal-title">{formData.id ? 'Edit Routine' : 'Create Daily Routine'}</h2>
                 <button type="button" className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>
                   <X size={20} />
                 </button>
@@ -815,7 +815,7 @@ export default function RoutineView() {
               <form onSubmit={handleFormSubmit}>
                 <div className="modal-body">
                   <div className="input-group">
-                    <label className="input-label">Habit Name</label>
+                    <label className="input-label">Routine Name</label>
                     <input 
                       type="text" 
                       className="input" 
@@ -913,7 +913,7 @@ export default function RoutineView() {
                 </div>
                 <div className="modal-footer">
                   <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={!formData.title?.trim() || formData.days.length === 0}>Save Habit</button>
+                  <button type="submit" className="btn btn-primary" disabled={!formData.title?.trim() || formData.days.length === 0}>Save Routine</button>
                 </div>
               </form>
             </motion.div>
@@ -941,7 +941,7 @@ export default function RoutineView() {
             >
               <div className="modal-header">
                 <h3 className="modal-title flex items-center gap-2">
-                  <Camera size={20} className="text-purple" /> Vision AI — Extract Habits
+                  <Camera size={20} className="text-purple" /> Vision AI — Extract Routines
                 </h3>
                 <button className="btn btn-ghost" onClick={() => { if (!visionLoading) { setShowVisionModal(false); setVisionPreview(null); setVisionResults(null); } }}>
                   <X size={18} />
@@ -956,7 +956,7 @@ export default function RoutineView() {
                 )}
                 {smartSuccess && (
                   <div style={{ padding: 'var(--space-md)', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-green)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-md)' }}>
-                    Successfully added habits!
+                    Successfully added routines!
                   </div>
                 )}
 
@@ -995,7 +995,7 @@ export default function RoutineView() {
                           setVisionResults(data.suggestions);
                         } else {
                           setVisionResults([]);
-                          setVisionError(data.message || 'No habits found in this image. Try a clearer photo.');
+                          setVisionError(data.message || 'No routines found in this image. Try a clearer photo.');
                         }
                       } catch (err) {
                         setVisionError('Vision AI failed to process this image. Please try again.');
@@ -1011,7 +1011,7 @@ export default function RoutineView() {
                       </>
                     ) : (
                       <>
-                        <Sparkles size={18} /> Extract Habits from Image
+                        <Sparkles size={18} /> Extract Routines from Image
                       </>
                     )}
                   </motion.button>
@@ -1022,7 +1022,7 @@ export default function RoutineView() {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-md)' }}>
                       <span style={{ fontWeight: 700, fontSize: 15 }}>
-                        Found {visionResults.length} habit{visionResults.length > 1 ? 's' : ''}
+                        Found {visionResults.length} routine{visionResults.length > 1 ? 's' : ''}
                       </span>
                       <motion.button
                         whileHover={{ scale: 1.03 }}
@@ -1046,7 +1046,7 @@ export default function RoutineView() {
                           setTimeout(() => setSmartSuccess(false), 3000);
                         }}
                       >
-                        <Plus size={14} /> Add All Habits
+                        <Plus size={14} /> Add All Routines
                       </motion.button>
                     </div>
 
@@ -1086,7 +1086,7 @@ export default function RoutineView() {
                   <div className="empty-state" style={{ padding: 'var(--space-xl)' }}>
                     <ImageIcon size={40} style={{ color: 'var(--text-tertiary)', marginBottom: 8 }} />
                     <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
-                      No actionable habits were found in this image. Try a clearer photo with visible text or a written list.
+                      No actionable routines were found in this image. Try a clearer photo with visible text or a written list.
                     </p>
                   </div>
                 )}

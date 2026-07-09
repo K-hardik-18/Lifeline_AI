@@ -34,17 +34,17 @@ If you cannot find any actionable tasks in the image, return: {"tasks": [], "mes
 
 Return ONLY valid JSON, no markdown fences, no extra text.`;
 
-const ROUTINE_VISION_PROMPT = `You are a productivity assistant. Analyze this image carefully. It may contain handwritten notes, a whiteboard, a printed list, or a screenshot of daily habits or routines.
+const ROUTINE_VISION_PROMPT = `You are a productivity assistant. Analyze this image carefully. It may contain handwritten notes, a whiteboard, a printed list, or a screenshot of daily routines or routines.
 
-Extract ALL actionable habits, routines, or repeating items from the image.
+Extract ALL actionable routines, routines, or repeating items from the image.
 
-For each habit, return a JSON object with these fields:
-- title (string): A clear, concise title for the habit
+For each routine, return a JSON object with these fields:
+- title (string): A clear, concise title for the routine
 - reason (string): Any additional details, motivation, or context from the image
 - category (string): One of 'work', 'study', 'personal', 'finance', 'health' — pick the best fit
 - priority (string): One of 'critical', 'high', 'medium', 'low' — infer from any urgency cues in the image
 
-Return your response as a JSON object with a single key "suggestions" containing an array of habit objects.
+Return your response as a JSON object with a single key "suggestions" containing an array of routine objects.
 
 Example:
 {
@@ -58,7 +58,7 @@ Example:
   ]
 }
 
-If you cannot find any actionable habits in the image, return: {"suggestions": [], "message": "No actionable habits found in this image."}
+If you cannot find any actionable routines in the image, return: {"suggestions": [], "message": "No actionable routines found in this image."}
 
 Return ONLY valid JSON, no markdown fences, no extra text.`;
 

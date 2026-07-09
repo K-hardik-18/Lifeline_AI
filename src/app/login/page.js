@@ -22,7 +22,7 @@ const ONBOARDING_SLIDES = [
   {
     id: 2,
     icon: <Brain size={64} style={{ color: 'var(--accent-green)' }} />,
-    title: "AI Habit Coach",
+    title: "AI Routine Coach",
     description: "Track your daily routines and let the AI coach analyze your consistency to build unstoppable momentum."
   }
 ];
