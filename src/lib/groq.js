@@ -16,7 +16,7 @@ export async function getGroqResponse(prompt, systemInstruction) {
         content: prompt,
       },
     ],
-    model: "llama3-8b-8192", // Fast model for JSON responses
+    model: "llama-3.1-8b-instant", // Fast model for JSON responses
     response_format: { type: "json_object" }
   });
 
