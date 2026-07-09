@@ -134,7 +134,7 @@ function EditableVisionTaskCard({ task, onAdd, onDelete, onUpdate }) {
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               <span className={`badge badge-${task.category || 'work'}`}>{(task.category || 'work').toUpperCase()}</span>
               <span className={`badge badge-${task.priority || 'medium'}`}>{(task.priority || 'medium').toUpperCase()}</span>
-              {task.estimatedMinutes && (
+              {task.estimatedMinutes > 0 && (
                 <span className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                   <Clock size={10} /> {task.estimatedMinutes}m
                 </span>
@@ -269,7 +269,11 @@ export default function TaskManager() {
         const res = await fetch('/api/ai/parse-task', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input: smartInput }),
+          body: JSON.stringify({ 
+            input: smartInput,
+            localTime: new Date().toString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          }),
         });
 
         if (!res.ok) throw new Error(res.status === 429 ? 'rate_limit' : 'parse_failed');
@@ -380,7 +384,11 @@ export default function TaskManager() {
       const res = await fetch('/api/ai/parse-task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: formData.title + (formData.description ? ' - ' + formData.description : '') }),
+        body: JSON.stringify({ 
+          input: formData.title + (formData.description ? ' - ' + formData.description : ''),
+          localTime: new Date().toString(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }),
       });
       if (!res.ok) throw new Error(res.status === 429 ? 'rate_limit' : 'parse_failed');
       const data = await res.json();
@@ -726,7 +734,7 @@ export default function TaskManager() {
                         <span className={`badge badge-${task.priority}`}>
                           {task.priority}
                         </span>
-                        {task.estimatedMinutes && (
+                        {task.estimatedMinutes > 0 && (
                           <span className="task-meta-item flex items-center gap-1">
                             <Clock size={12} /> {task.estimatedMinutes}m
                           </span>
@@ -811,7 +819,7 @@ export default function TaskManager() {
                                   </div>
                                 )}
                               </div>
-                              {st.estimatedMinutes && (
+                              {st.estimatedMinutes > 0 && (
                                 <span className="subtask-time">~{st.estimatedMinutes}m</span>
                               )}
                             </motion.div>

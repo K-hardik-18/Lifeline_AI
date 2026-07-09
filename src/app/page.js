@@ -75,7 +75,7 @@ function AppContent() {
       <main className="main-content">
         <header className="page-header" style={{ display: 'none' /* handled by inner components */ }} />
         
-        <div style={{ height: '100%' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeView}
@@ -83,7 +83,7 @@ function AppContent() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              style={{ height: '100%' }}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
             >
               {renderView()}
             </motion.div>

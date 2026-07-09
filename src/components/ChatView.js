@@ -178,7 +178,7 @@ export default function ChatView() {
   const showSuggestions = messages.length <= 1;
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', flex: 1, width: '100%' }}>
       {/* Chat Header */}
       <div className="page-header">
         <div className="page-header-content">
@@ -230,7 +230,7 @@ export default function ChatView() {
       </div>
 
       {/* Chat Container */}
-      <div className="chat-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 140px)' }}>
+      <div className="chat-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {/* Messages */}
         <div className="chat-messages p-4" style={{ flex: 1, overflowY: 'auto' }}>
           <AnimatePresence>
