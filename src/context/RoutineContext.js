@@ -40,6 +40,26 @@ export function RoutineProvider({ children }) {
   const { user } = useAuth();
   const [routines, setRoutines] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState(0);
+
+  const forceSyncRoutines = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('routines')
+        .select('*')
+        .eq('user_id', user.id);
+        
+      if (!error && data) {
+        setRoutines(data);
+        const now = Date.now();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ data, lastSynced: now }));
+        setLastSyncTime(now);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [user]);
 
   // Load from localStorage on mount & check cache TTL
   useEffect(() => {
@@ -61,44 +81,28 @@ export function RoutineProvider({ children }) {
               uniqueCached.push(item);
             }
           }
-          cached = uniqueCached;
-          
-          lastSynced = parsed.lastSynced || 0;
-          setRoutines(cached);
+          setRoutines(uniqueCached);
+          setLastSyncTime(parsed.lastSynced || 0);
         } else {
           setRoutines(defaultRoutines);
         }
         setIsLoaded(true);
 
-        if (user && Date.now() - lastSynced > 300000) {
-          const { data, error } = await supabase
-            .from('routines')
-            .select('*')
-            .eq('user_id', user.id);
-            
-          if (!error && data) {
-            const mappedData = [];
-            const dbIds = new Set();
-            for (const r of data) {
-              if (!dbIds.has(r.id)) {
-                dbIds.add(r.id);
-                mappedData.push(r);
-              }
-            }
-            setRoutines(mappedData);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: mappedData, lastSynced: Date.now() }));
-          }
+        if (user && Date.now() - (parsed?.lastSynced || 0) > 120000) {
+          await forceSyncRoutines();
         }
       } catch (err) {
         console.error(err);
       }
     };
     fetchRoutines();
-  }, [user]);
+  }, [user, forceSyncRoutines]);
 
   const updateCacheAndState = (newRoutines) => {
     setRoutines(newRoutines);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: newRoutines, lastSynced: Date.now() }));
+    const now = Date.now();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: newRoutines, lastSynced: now }));
+    setLastSyncTime(now);
   };
 
   const syncRoutine = async (routine, action = 'upsert') => {
@@ -125,7 +129,9 @@ export function RoutineProvider({ children }) {
     };
     setRoutines(prev => {
       const updated = [...prev, newRoutine];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updated, lastSynced: Date.now() }));
+      const now = Date.now();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updated, lastSynced: now }));
+      setLastSyncTime(now);
       return updated;
     });
     syncRoutine(newRoutine, 'upsert');
@@ -141,7 +147,9 @@ export function RoutineProvider({ children }) {
         }
         return r;
       });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updatedList, lastSynced: Date.now() }));
+      const now = Date.now();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updatedList, lastSynced: now }));
+      setLastSyncTime(now);
       if (updatedRoutine) syncRoutine(updatedRoutine, 'upsert');
       return updatedList;
     });
@@ -150,7 +158,9 @@ export function RoutineProvider({ children }) {
   const deleteRoutine = useCallback((id) => {
     setRoutines((prev) => {
       const updated = prev.filter((r) => r.id !== id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updated, lastSynced: Date.now() }));
+      const now = Date.now();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updated, lastSynced: now }));
+      setLastSyncTime(now);
       return updated;
     });
     syncRoutine({ id }, 'delete');
@@ -174,7 +184,9 @@ export function RoutineProvider({ children }) {
         }
         return r;
       });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updatedList, lastSynced: Date.now() }));
+      const now = Date.now();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updatedList, lastSynced: now }));
+      setLastSyncTime(now);
       if (updatedRoutine) syncRoutine(updatedRoutine, 'upsert');
       return updatedList;
     });
@@ -302,6 +314,8 @@ export function RoutineProvider({ children }) {
       value={{
         routines,
         isLoaded,
+        lastSyncTime,
+        forceSyncRoutines,
         addRoutine,
         updateRoutine,
         deleteRoutine,
@@ -310,6 +324,7 @@ export function RoutineProvider({ children }) {
         getTopicAnalytics,
         getRoutineHistoryStats,
         getTimeframeAggregate,
+        updateCacheAndState
       }}
     >
       {children}

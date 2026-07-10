@@ -3,7 +3,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
-import { LogOut, User, Check, Edit2, X, Moon, Sun } from 'lucide-react';
+import { useTasks } from '@/context/TaskContext';
+import { useRoutines } from '@/context/RoutineContext';
+import { LogOut, User, Check, Edit2, X, Moon, Sun, RefreshCw } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
 export default function ProfileMenu() {
@@ -13,6 +15,10 @@ export default function ProfileMenu() {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  
+  const { lastSyncTime: taskSyncTime, forceSyncTasks } = useTasks();
+  const { lastSyncTime: routineSyncTime, forceSyncRoutines } = useRoutines();
   
   const menuRef = useRef(null);
 
@@ -48,6 +54,21 @@ export default function ProfileMenu() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    await Promise.all([forceSyncTasks(), forceSyncRoutines()]);
+    setIsSyncing(false);
+  };
+
+  const getSyncText = () => {
+    const lastSync = Math.max(taskSyncTime || 0, routineSyncTime || 0);
+    if (!lastSync) return 'Never synced';
+    const mins = Math.floor((Date.now() - lastSync) / 60000);
+    if (mins === 0) return 'Synced just now';
+    if (mins === 1) return 'Synced 1 min ago';
+    return `Synced ${mins} mins ago`;
   };
 
   if (!user) return null;
@@ -108,6 +129,14 @@ export default function ProfileMenu() {
             </div>
 
             <div className="dropdown-divider" />
+
+            <button className="dropdown-item" onClick={handleSync} disabled={isSyncing}>
+              <RefreshCw size={16} className={isSyncing ? 'spin' : ''} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.2 }}>
+                <span>Sync Now</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>{getSyncText()}</span>
+              </div>
+            </button>
 
             <button className="dropdown-item" onClick={toggleTheme}>
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}

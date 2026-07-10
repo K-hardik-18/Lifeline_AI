@@ -1196,6 +1196,9 @@ input, textarea, select {
   animation: spin 0.8s linear infinite;
 }
 
+.spin {
+  animation: spin 1s linear infinite;
+}
 .skeleton {
   background: linear-gradient(90deg, var(--bg-glass) 25%, var(--bg-glass-hover) 50%, var(--bg-glass) 75%);
   background-size: 200% 100%;

@@ -27,6 +27,37 @@ export function TaskProvider({ children }) {
   const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState(0);
+
+  const forceSyncTasks = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user.id);
+        
+      if (!error && data) {
+        const mappedData = [];
+        const dbIds = new Set();
+        for (const t of data) {
+          if (!dbIds.has(t.id)) {
+            dbIds.add(t.id);
+            mappedData.push({
+              ...t,
+              status: t.completed ? 'completed' : 'pending'
+            });
+          }
+        }
+        setTasks(mappedData);
+        const now = Date.now();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: mappedData, lastSynced: now }));
+        setLastSyncTime(now);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [user]);
 
   // Load from localStorage on mount & check cache TTL
   useEffect(() => {
@@ -53,34 +84,15 @@ export function TaskProvider({ children }) {
           
           lastSynced = parsed.lastSynced || 0;
           setTasks(cached);
+          setLastSyncTime(lastSynced);
         } else {
           setTasks(defaultTasks);
         }
         setIsLoaded(true);
 
-        // Fetch from Supabase if authenticated and cache is older than 5 mins
-        if (user && Date.now() - lastSynced > 300000) {
-          const { data, error } = await supabase
-            .from('tasks')
-            .select('*')
-            .eq('user_id', user.id);
-            
-          if (!error && data) {
-            // Convert 'completed' boolean to 'status' string if needed
-            const mappedData = [];
-            const dbIds = new Set();
-            for (const t of data) {
-              if (!dbIds.has(t.id)) {
-                dbIds.add(t.id);
-                mappedData.push({
-                  ...t,
-                  status: t.completed ? 'completed' : 'pending'
-                });
-              }
-            }
-            setTasks(mappedData);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: mappedData, lastSynced: Date.now() }));
-          }
+        // Fetch from Supabase if authenticated and cache is older than 2 mins
+        if (user && Date.now() - lastSynced > 120000) {
+          await forceSyncTasks();
         }
       } catch (err) {
         console.error(err);
@@ -91,7 +103,9 @@ export function TaskProvider({ children }) {
 
   const updateCacheAndState = (newTasks) => {
     setTasks(newTasks);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: newTasks, lastSynced: Date.now() }));
+    const now = Date.now();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: newTasks, lastSynced: now }));
+    setLastSyncTime(now);
   };
 
   const syncTask = async (task, action = 'upsert') => {
@@ -131,7 +145,9 @@ export function TaskProvider({ children }) {
     };
     setTasks(prev => {
       const updated = [newTask, ...prev];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updated, lastSynced: Date.now() }));
+      const now = Date.now();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updated, lastSynced: now }));
+      setLastSyncTime(now);
       return updated;
     });
     syncTask(newTask, 'upsert');
@@ -148,7 +164,9 @@ export function TaskProvider({ children }) {
         }
         return t;
       });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updatedList, lastSynced: Date.now() }));
+      const now = Date.now();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updatedList, lastSynced: now }));
+      setLastSyncTime(now);
       if (updatedTask) syncTask(updatedTask, 'upsert');
       return updatedList;
     });
@@ -157,7 +175,9 @@ export function TaskProvider({ children }) {
   const deleteTask = useCallback((id) => {
     setTasks(prev => {
       const updated = prev.filter(t => t.id !== id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updated, lastSynced: Date.now() }));
+      const now = Date.now();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updated, lastSynced: now }));
+      setLastSyncTime(now);
       return updated;
     });
     syncTask({ id }, 'delete');
@@ -172,7 +192,9 @@ export function TaskProvider({ children }) {
         updatedTask = { ...t, status: newStatus, completedAt: newStatus === 'completed' ? new Date().toISOString() : null };
         return updatedTask;
       });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updatedList, lastSynced: Date.now() }));
+      const now = Date.now();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: updatedList, lastSynced: now }));
+      setLastSyncTime(now);
       if (updatedTask) syncTask(updatedTask, 'upsert');
       return updatedList;
     });
@@ -225,10 +247,13 @@ export function TaskProvider({ children }) {
     <TaskContext.Provider value={{
       tasks,
       isLoaded,
+      lastSyncTime,
+      forceSyncTasks,
       addTask,
       updateTask,
       deleteTask,
       toggleTaskStatus,
+      updateCacheAndState,
       getTasksByPriority,
       getTasksDueToday,
       getOverdueTasks,
