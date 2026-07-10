@@ -80,6 +80,8 @@ export default function FocusView() {
   const [showSettings, setShowSettings] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  
   // Selected task state
   const [selectedTaskId, setSelectedTaskId] = useState(null);
 
@@ -88,29 +90,41 @@ export default function FocusView() {
 
   useEffect(() => {
     let interval = null;
-    if (isActive && timeLeft > 0) {
+    let timeout = null;
+    
+    if (isActive && !isTransitioning && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(timeLeft => timeLeft - 1);
         playTick(isMuted);
       }, 1000);
-    } else if (timeLeft === 0 && isActive) {
+    } else if (timeLeft === 0 && isActive && !isTransitioning) {
       playAlarm(isMuted);
-      if (mode === 'work') {
-        // Work finished -> Start Break automatically and exit fullscreen
-        setMode('break');
-        setTimeLeft(breakDuration * 60);
-        if (document.fullscreenElement) {
-          document.exitFullscreen().catch(e => console.log(e));
+      setIsTransitioning(true);
+      
+      timeout = setTimeout(() => {
+        if (mode === 'work') {
+          // Work finished -> Start Break automatically and exit fullscreen
+          setMode('break');
+          setTimeLeft(breakDuration * 60);
+          setIsTransitioning(false);
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(e => console.log(e));
+          }
+        } else {
+          // Break finished -> Stop completely (no infinite loop)
+          setIsActive(false);
+          setMode('work');
+          setTimeLeft(workDuration * 60);
+          setIsTransitioning(false);
         }
-      } else {
-        // Break finished -> Stop completely (no infinite loop)
-        setIsActive(false);
-        setMode('work');
-        setTimeLeft(workDuration * 60);
-      }
+      }, 5000); // 5 seconds delay for end sound
     }
-    return () => clearInterval(interval);
-  }, [isActive, timeLeft, mode, isMuted, workDuration, breakDuration]);
+    
+    return () => {
+      if (interval) clearInterval(interval);
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [isActive, isTransitioning, timeLeft, mode, isMuted, workDuration, breakDuration]);
 
   const toggleTimer = () => {
     if (!isActive) {
