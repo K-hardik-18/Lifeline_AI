@@ -16,7 +16,11 @@ You MUST always return a valid JSON object with the following structure:
   "response": "Your conversational text response to the user formatted in markdown",
   "actions": [
     { "type": "add_task", "payload": { "title": "...", "description": "...", "category": "work", "priority": "medium", "estimatedMinutes": 30 } },
-    { "type": "add_routine", "payload": { "title": "...", "category": "health", "days": [1,2,3,4,5], "priority": "high" } }
+    { "type": "update_task", "payload": { "id": "task-uuid", "title": "..." } },
+    { "type": "delete_task", "payload": { "id": "task-uuid" } },
+    { "type": "add_routine", "payload": { "title": "...", "category": "health", "days": [1,2,3,4,5], "priority": "high" } },
+    { "type": "update_routine", "payload": { "id": "routine-uuid", "title": "..." } },
+    { "type": "delete_routine", "payload": { "id": "routine-uuid" } }
   ]
 }
 If there are no actions to take (or if you are waiting for confirmation), return an empty array for "actions". Return ONLY valid JSON, no markdown code block fences.`;

@@ -24,8 +24,8 @@ const WELCOME_MESSAGE = {
 };
 
 export default function ChatView() {
-  const { tasks, addTask } = useTasks();
-  const { routines, addRoutine } = useRoutines();
+  const { tasks, addTask, updateTask, deleteTask } = useTasks();
+  const { routines, addRoutine, updateRoutine, deleteRoutine } = useRoutines();
 
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
@@ -114,8 +114,16 @@ export default function ChatView() {
           for (const action of data.actions) {
             if (action.type === 'add_task' && action.payload) {
               addTask(action.payload);
+            } else if (action.type === 'update_task' && action.payload && action.payload.id) {
+              updateTask(action.payload.id, action.payload);
+            } else if (action.type === 'delete_task' && action.payload && action.payload.id) {
+              deleteTask(action.payload.id);
             } else if (action.type === 'add_routine' && action.payload) {
               addRoutine(action.payload);
+            } else if (action.type === 'update_routine' && action.payload && action.payload.id) {
+              updateRoutine(action.payload.id, action.payload);
+            } else if (action.type === 'delete_routine' && action.payload && action.payload.id) {
+              deleteRoutine(action.payload.id);
             }
           }
         }
@@ -137,7 +145,7 @@ export default function ChatView() {
         setIsLoading(false);
       }
     },
-    [input, isLoading, tasks, routines, addTask, addRoutine],
+    [input, isLoading, tasks, routines, addTask, updateTask, deleteTask, addRoutine, updateRoutine, deleteRoutine],
   );
 
   const toggleListening = useCallback(() => {
@@ -258,7 +266,8 @@ export default function ChatView() {
                           fontWeight: 600
                         }}>
                           <CheckCircle2 size={12} />
-                          Added {action.type === 'add_task' ? 'Task' : 'Routine'}: {action.payload?.title || (action.type === 'add_task' ? 'New Task' : 'New Routine')}
+                          {action.type.includes('add') ? 'Added ' : action.type.includes('update') ? 'Updated ' : 'Deleted '}
+                          {action.type.includes('task') ? 'Task' : 'Routine'}: {action.payload?.title || ''}
                         </div>
                       ))}
                     </div>
