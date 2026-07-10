@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Timer, Play, Pause, RotateCcw, Target, CheckCircle2, Settings, Volume2, VolumeX } from 'lucide-react';
+import { Timer, Play, Pause, RotateCcw, Target, CheckCircle2, Settings, Volume2, VolumeX, X } from 'lucide-react';
+import WheelPicker from './WheelPicker';
 
 let audioCtx = null;
 let tickBuffer = null;
@@ -70,11 +71,9 @@ export default function FocusView() {
   const { tasks, toggleTaskStatus } = useTasks();
   
   // Pomodoro state
-  const [workDuration, setWorkDuration] = useState(25);
-  const [breakDuration, setBreakDuration] = useState(5);
-  const [workInput, setWorkInput] = useState('25');
-  const [breakInput, setBreakInput] = useState('5');
-  const [timeLeft, setTimeLeft] = useState(workDuration * 60);
+  const [workDuration, setWorkDuration] = useState(25 * 60);
+  const [breakDuration, setBreakDuration] = useState(5 * 60);
+  const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState('work'); // 'work' | 'break'
   const [showSettings, setShowSettings] = useState(false);
@@ -105,7 +104,7 @@ export default function FocusView() {
         if (mode === 'work') {
           // Work finished -> Start Break automatically and exit fullscreen
           setMode('break');
-          setTimeLeft(breakDuration * 60);
+          setTimeLeft(breakDuration);
           setIsTransitioning(false);
           if (document.fullscreenElement) {
             document.exitFullscreen().catch(e => console.log(e));
@@ -114,7 +113,7 @@ export default function FocusView() {
           // Break finished -> Stop completely (no infinite loop)
           setIsActive(false);
           setMode('work');
-          setTimeLeft(workDuration * 60);
+          setTimeLeft(workDuration);
           setIsTransitioning(false);
         }
       }, 5000); // 5 seconds delay for end sound
@@ -142,19 +141,19 @@ export default function FocusView() {
 
   const resetTimer = () => {
     setIsActive(false);
-    setTimeLeft(mode === 'work' ? workDuration * 60 : breakDuration * 60);
+    setTimeLeft(mode === 'work' ? workDuration : breakDuration);
   };
 
   const setWorkMode = () => {
     setMode('work');
     setIsActive(false);
-    setTimeLeft(workDuration * 60);
+    setTimeLeft(workDuration);
   };
 
   const setBreakMode = () => {
     setMode('break');
     setIsActive(false);
-    setTimeLeft(breakDuration * 60);
+    setTimeLeft(breakDuration);
   };
 
   const formatTime = (seconds) => {
@@ -164,7 +163,7 @@ export default function FocusView() {
   };
 
   // Calculate progress percentage
-  const totalTime = mode === 'work' ? workDuration * 60 : breakDuration * 60;
+  const totalTime = mode === 'work' ? workDuration : breakDuration;
   const progress = ((totalTime - timeLeft) / totalTime) * 100;
 
   return (
@@ -195,14 +194,14 @@ export default function FocusView() {
               className={`btn ${mode === 'work' ? 'btn-primary' : 'btn-secondary'}`}
               onClick={setWorkMode}
             >
-              Focus ({workDuration}m)
+              Focus ({Math.floor(workDuration / 60)}m{workDuration % 60 > 0 ? ` ${workDuration % 60}s` : ''})
             </button>
             <button 
               className={`btn ${mode === 'break' ? 'btn-primary' : 'btn-secondary'}`}
               onClick={setBreakMode}
               style={{ background: mode === 'break' ? 'var(--accent-green)' : undefined }}
             >
-              Break ({breakDuration}m)
+              Break ({Math.floor(breakDuration / 60)}m{breakDuration % 60 > 0 ? ` ${breakDuration % 60}s` : ''})
             </button>
             <button
               className="btn btn-ghost btn-icon"
@@ -226,46 +225,70 @@ export default function FocusView() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                style={{ overflow: 'hidden', width: '100%', maxWidth: 300, marginBottom: 'var(--space-md)' }}
+                style={{ overflow: 'hidden', width: '100%', maxWidth: 350, marginBottom: 'var(--space-md)' }}
               >
-                <div style={{ display: 'flex', gap: 'var(--space-md)', padding: 'var(--space-sm)', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
-                  <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                    <label className="input-label" style={{ fontSize: 11 }}>Work (min)</label>
-                    <input 
-                      type="number" 
-                      className="input" 
-                      value={workInput}
-                      min={1} max={120}
-                      onChange={(e) => setWorkInput(e.target.value)}
-                      onBlur={() => {
-                        let val = parseInt(workInput);
-                        if (isNaN(val) || val < 1) val = 1;
-                        if (val > 120) val = 120;
-                        setWorkInput(val.toString());
-                        setWorkDuration(val);
-                        if (mode === 'work' && !isActive) setTimeLeft(val * 60);
-                      }}
-                      style={{ padding: '4px 8px', fontSize: 13 }}
-                    />
+                <div style={{ padding: 'var(--space-md)', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <h4 style={{ margin: 0, fontSize: 14 }}>Timer Settings</h4>
+                    <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setShowSettings(false)}>
+                      <X size={16} />
+                    </button>
                   </div>
-                  <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                    <label className="input-label" style={{ fontSize: 11 }}>Break (min)</label>
-                    <input 
-                      type="number" 
-                      className="input" 
-                      value={breakInput}
-                      min={1} max={60}
-                      onChange={(e) => setBreakInput(e.target.value)}
-                      onBlur={() => {
-                        let val = parseInt(breakInput);
-                        if (isNaN(val) || val < 1) val = 1;
-                        if (val > 60) val = 60;
-                        setBreakInput(val.toString());
-                        setBreakDuration(val);
-                        if (mode === 'break' && !isActive) setTimeLeft(val * 60);
-                      }}
-                      style={{ padding: '4px 8px', fontSize: 13 }}
-                    />
+                  
+                  <div style={{ display: 'flex', gap: '24px' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, textAlign: 'center' }}>Focus</div>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+                        <WheelPicker 
+                          options={Array.from({length: 121}, (_, i) => i)}
+                          value={Math.floor(workDuration / 60)}
+                          onChange={(v) => {
+                            const newDur = v * 60 + (workDuration % 60);
+                            setWorkDuration(newDur);
+                            if (mode === 'work' && !isActive) setTimeLeft(newDur);
+                          }}
+                          label="Min"
+                        />
+                        <WheelPicker 
+                          options={Array.from({length: 60}, (_, i) => i)}
+                          value={workDuration % 60}
+                          onChange={(v) => {
+                            const newDur = Math.floor(workDuration / 60) * 60 + v;
+                            setWorkDuration(newDur);
+                            if (mode === 'work' && !isActive) setTimeLeft(newDur);
+                          }}
+                          label="Sec"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div style={{ width: 1, background: 'var(--border-color)' }}></div>
+                    
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, textAlign: 'center' }}>Break</div>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+                        <WheelPicker 
+                          options={Array.from({length: 61}, (_, i) => i)}
+                          value={Math.floor(breakDuration / 60)}
+                          onChange={(v) => {
+                            const newDur = v * 60 + (breakDuration % 60);
+                            setBreakDuration(newDur);
+                            if (mode === 'break' && !isActive) setTimeLeft(newDur);
+                          }}
+                          label="Min"
+                        />
+                        <WheelPicker 
+                          options={Array.from({length: 60}, (_, i) => i)}
+                          value={breakDuration % 60}
+                          onChange={(v) => {
+                            const newDur = Math.floor(breakDuration / 60) * 60 + v;
+                            setBreakDuration(newDur);
+                            if (mode === 'break' && !isActive) setTimeLeft(newDur);
+                          }}
+                          label="Sec"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>
