@@ -79,8 +79,8 @@ export default function FocusView() {
   const [showSettings, setShowSettings] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  
+  const transitionTimeoutRef = useRef(null);
+
   // Selected task state
   const [selectedTaskId, setSelectedTaskId] = useState(null);
 
@@ -89,43 +89,57 @@ export default function FocusView() {
 
   useEffect(() => {
     let interval = null;
-    let timeout = null;
     
-    if (isActive && !isTransitioning && timeLeft > 0) {
+    if (isActive && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(timeLeft => timeLeft - 1);
         playTick(isMuted);
       }, 1000);
-    } else if (timeLeft === 0 && isActive && !isTransitioning) {
+    } else if (timeLeft === 0 && isActive) {
       playAlarm(isMuted);
-      setIsTransitioning(true);
+      setIsActive(false); // Pause timer instantly so break time doesn't start
       
-      timeout = setTimeout(() => {
-        if (mode === 'work') {
-          // Work finished -> Start Break automatically and exit fullscreen
+      if (mode === 'work') {
+        // Exit fullscreen immediately
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(e => console.log(e));
+        }
+        // Wait 5 seconds at 00:00, then switch to break and start it
+        transitionTimeoutRef.current = setTimeout(() => {
           setMode('break');
           setTimeLeft(breakDuration);
-          setIsTransitioning(false);
-          if (document.fullscreenElement) {
-            document.exitFullscreen().catch(e => console.log(e));
-          }
-        } else {
-          // Break finished -> Stop completely (no infinite loop)
-          setIsActive(false);
+          setIsActive(true);
+        }, 5000);
+      } else {
+        // Wait 5 seconds at 00:00, then reset to work mode
+        transitionTimeoutRef.current = setTimeout(() => {
           setMode('work');
           setTimeLeft(workDuration);
-          setIsTransitioning(false);
-        }
-      }, 5000); // 5 seconds delay for end sound
+        }, 5000);
+      }
     }
     
     return () => {
       if (interval) clearInterval(interval);
-      if (timeout) clearTimeout(timeout);
     };
-  }, [isActive, isTransitioning, timeLeft, mode, isMuted, workDuration, breakDuration]);
+  }, [isActive, timeLeft, mode, isMuted, workDuration, breakDuration]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+    };
+  }, []);
+
+  const clearTransition = () => {
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+      transitionTimeoutRef.current = null;
+    }
+  };
 
   const toggleTimer = () => {
+    clearTransition();
     if (!isActive) {
       setIsActive(true);
       if (mode === 'work' && !document.fullscreenElement) {
@@ -140,17 +154,20 @@ export default function FocusView() {
   };
 
   const resetTimer = () => {
+    clearTransition();
     setIsActive(false);
     setTimeLeft(mode === 'work' ? workDuration : breakDuration);
   };
 
   const setWorkMode = () => {
+    clearTransition();
     setMode('work');
     setIsActive(false);
     setTimeLeft(workDuration);
   };
 
   const setBreakMode = () => {
+    clearTransition();
     setMode('break');
     setIsActive(false);
     setTimeLeft(breakDuration);
