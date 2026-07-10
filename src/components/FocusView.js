@@ -12,32 +12,31 @@ let alarmBuffer = null;
 
 const getAudioContext = () => {
   if (typeof window === 'undefined') return null;
-  if (!audioCtx) {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (AudioContext) audioCtx = new AudioContext();
+  try {
+    if (!audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) audioCtx = new AudioContext();
+    }
+    return audioCtx;
+  } catch (e) {
+    console.warn('AudioContext creation prevented:', e);
+    return null;
   }
-  return audioCtx;
 };
 
-// Preload audio buffers
-if (typeof window !== 'undefined') {
-  const loadAudio = async (url) => {
-    try {
-      const response = await fetch(url);
-      const arrayBuffer = await response.arrayBuffer();
-      const ctx = getAudioContext();
-      if (ctx) {
-        return await ctx.decodeAudioData(arrayBuffer);
-      }
-    } catch (err) {
-      console.error('Error loading audio:', url, err);
+const loadAudio = async (url) => {
+  try {
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const ctx = getAudioContext();
+    if (ctx) {
+      return await ctx.decodeAudioData(arrayBuffer);
     }
-    return null;
-  };
-
-  loadAudio('/tick_sound.mp3').then(buffer => tickBuffer = buffer);
-  loadAudio('/end_sound.mp3').then(buffer => alarmBuffer = buffer);
-}
+  } catch (err) {
+    console.error('Error loading audio:', url, err);
+  }
+  return null;
+};
 
 const playTick = (muted) => {
   if (muted) return;
@@ -80,6 +79,14 @@ export default function FocusView() {
   const [isMuted, setIsMuted] = useState(false);
   
   const transitionTimeoutRef = useRef(null);
+
+  // Preload audio on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (!tickBuffer) loadAudio('/tick_sound.mp3').then(b => { if (b) tickBuffer = b; });
+      if (!alarmBuffer) loadAudio('/end_sound.mp3').then(b => { if (b) alarmBuffer = b; });
+    }
+  }, []);
 
   // Selected task state
   const [selectedTaskId, setSelectedTaskId] = useState(null);
