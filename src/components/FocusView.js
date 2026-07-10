@@ -5,31 +5,64 @@ import { useTasks } from '@/context/TaskContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Timer, Play, Pause, RotateCcw, Target, CheckCircle2, Settings, Volume2, VolumeX } from 'lucide-react';
 
-let tickAudio = null;
-let alarmAudio = null;
+let audioCtx = null;
+let tickBuffer = null;
+let alarmBuffer = null;
 
+const getAudioContext = () => {
+  if (typeof window === 'undefined') return null;
+  if (!audioCtx) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) audioCtx = new AudioContext();
+  }
+  return audioCtx;
+};
+
+// Preload audio buffers
 if (typeof window !== 'undefined') {
-  tickAudio = new Audio('/tick_sound.mp3');
-  alarmAudio = new Audio('/end_sound.mp3');
+  const loadAudio = async (url) => {
+    try {
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      const ctx = getAudioContext();
+      if (ctx) {
+        return await ctx.decodeAudioData(arrayBuffer);
+      }
+    } catch (err) {
+      console.error('Error loading audio:', url, err);
+    }
+    return null;
+  };
+
+  loadAudio('/tick_sound.mp3').then(buffer => tickBuffer = buffer);
+  loadAudio('/end_sound.mp3').then(buffer => alarmBuffer = buffer);
 }
 
 const playTick = (muted) => {
   if (muted) return;
   try {
-    if (tickAudio) {
-      tickAudio.currentTime = 0;
-      tickAudio.play().catch(e => console.log('Audio play prevented', e));
-    }
+    const ctx = getAudioContext();
+    if (!ctx || !tickBuffer) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    
+    const source = ctx.createBufferSource();
+    source.buffer = tickBuffer;
+    source.connect(ctx.destination);
+    source.start();
   } catch (e) {}
 };
 
 const playAlarm = (muted) => {
   if (muted) return;
   try {
-    if (alarmAudio) {
-      alarmAudio.currentTime = 0;
-      alarmAudio.play().catch(e => console.log('Audio play prevented', e));
-    }
+    const ctx = getAudioContext();
+    if (!ctx || !alarmBuffer) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    
+    const source = ctx.createBufferSource();
+    source.buffer = alarmBuffer;
+    source.connect(ctx.destination);
+    source.start();
   } catch (e) {}
 };
 
