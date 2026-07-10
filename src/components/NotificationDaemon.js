@@ -11,16 +11,40 @@ export default function NotificationDaemon() {
   const notifiedRoutines = useRef(new Set());
 
   useEffect(() => {
-    // Request permission on mount if needed
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'default') {
-        Notification.requestPermission();
+    // Request permission on mount if needed safely
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'default') {
+          Notification.requestPermission().catch(() => {}); // catch promise rejection on Safari
+        }
       }
-    }
+    } catch (e) {}
+
+    const sendNotification = (title, options) => {
+      try {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then(registration => {
+            if (registration && registration.showNotification) {
+              registration.showNotification(title, options);
+            } else {
+              new Notification(title, options);
+            }
+          }).catch(e => {
+            try { new Notification(title, options); } catch(err){}
+          });
+        } else {
+          new Notification(title, options);
+        }
+      } catch (e) {
+        console.warn('Failed to show notification:', e);
+      }
+    };
 
     const checkNotifications = () => {
       if (typeof window === 'undefined' || !('Notification' in window)) return;
-      if (Notification.permission !== 'granted') return;
+      try {
+        if (Notification.permission !== 'granted') return;
+      } catch(e) { return; }
 
       const now = new Date();
       
@@ -33,7 +57,7 @@ export default function NotificationDaemon() {
         
         // If due in between 50 and 65 mins, notify once
         if (diffMins > 50 && diffMins <= 65 && !notifiedTasks.current.has(task.id)) {
-          new Notification('Task Due Soon', {
+          sendNotification('Task Due Soon', {
             body: `Your task "${task.title}" is due in about 1 hour!`,
             icon: '/favicon.ico'
           });
@@ -42,11 +66,10 @@ export default function NotificationDaemon() {
       });
 
       // Check Routines (e.g. daily review at 9 PM)
-      // If it's exactly between 9:00 PM and 9:15 PM
       if (now.getHours() === 21 && now.getMinutes() < 15) {
         const todayStr = now.toLocaleDateString();
         if (!notifiedRoutines.current.has(todayStr)) {
-          new Notification('Evening Routine Reminder', {
+          sendNotification('Evening Routine Reminder', {
             body: 'Time to review your day and plan for tomorrow!',
             icon: '/favicon.ico'
           });
@@ -63,5 +86,5 @@ export default function NotificationDaemon() {
     return () => clearInterval(intervalId);
   }, [tasks, routines]);
 
-  return null; // This component renders nothing
+  return null;
 }
