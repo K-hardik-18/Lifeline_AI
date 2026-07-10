@@ -38,7 +38,8 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${inter.variable} ${outfit.variable} ${caveat.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#FDFBF7" />
+        <meta name="theme-color" content="#4F6EF7" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body>
         <ThemeProvider>

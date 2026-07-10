@@ -9,11 +9,11 @@ import {
 } from 'lucide-react';
 
 const CATEGORY_COLORS = {
-  work: { bg: 'rgba(79,110,247,0.18)', fill: 'var(--accent-blue)', label: 'Work' },
-  study: { bg: 'rgba(139,92,246,0.18)', fill: 'var(--accent-purple)', label: 'Study' },
-  personal: { bg: 'rgba(236,72,153,0.18)', fill: 'var(--accent-pink)', label: 'Personal' },
-  finance: { bg: 'rgba(245,158,11,0.18)', fill: 'var(--accent-orange)', label: 'Finance' },
-  health: { bg: 'rgba(16,185,129,0.18)', fill: 'var(--accent-green)', label: 'Health' },
+  work: { bg: 'var(--bg-tertiary)', fill: 'var(--text-secondary)', label: 'Work' },
+  study: { bg: 'var(--bg-tertiary)', fill: 'var(--accent-purple)', label: 'Study' },
+  personal: { bg: 'var(--bg-tertiary)', fill: 'var(--accent-pink)', label: 'Personal' },
+  finance: { bg: 'var(--bg-tertiary)', fill: 'var(--accent-orange)', label: 'Finance' },
+  health: { bg: 'var(--bg-tertiary)', fill: 'var(--accent-green)', label: 'Health' },
 };
 
 const PRIORITY_COLORS = {
@@ -145,9 +145,8 @@ export default function Analytics() {
                 borderRadius: '50%',
                 background: `conic-gradient(
                   var(--accent-blue) 0deg,
-                  var(--accent-purple) ${completionDeg * 0.5}deg,
-                  var(--accent-pink) ${completionDeg}deg,
-                  rgba(255,255,255,0.05) ${completionDeg}deg
+                  var(--accent-purple) ${completionDeg}deg,
+                  var(--bg-tertiary) ${completionDeg}deg
                 )`,
                 display: 'flex',
                 alignItems: 'center',
@@ -215,6 +214,7 @@ export default function Analytics() {
                     animate={{ width: `${stats.completionRate}%` }}
                     transition={{ duration: 1, ease: "easeOut" }}
                     className="progress-fill" 
+                    style={{ background: 'linear-gradient(90deg, var(--accent-blue), var(--accent-purple))' }}
                   />
                 </div>
               </div>

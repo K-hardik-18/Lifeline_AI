@@ -7,6 +7,9 @@ import { Brain, ListTodo, Plus, CheckCircle, Clock, AlertTriangle, Calendar, Ref
 import { marked } from 'marked';
 import { useAuth } from '@/context/AuthContext';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
+import { useNotes } from '@/context/NoteContext';
+import { Send } from 'lucide-react';
+import NotesView from './NotesView';
 
 function formatDueDate(dateStr) {
   if (!dateStr) return '';
@@ -57,6 +60,8 @@ export default function Dashboard({ onNavigate }) {
     getOverdueTasks,
   } = useTasks();
 
+  const { addNote } = useNotes();
+  const [quickNote, setQuickNote] = useState('');
   const [briefing, setBriefing] = useState('');
   const [briefingLoading, setBriefingLoading] = useState(false);
   const [briefingError, setBriefingError] = useState('');
@@ -109,7 +114,9 @@ export default function Dashboard({ onNavigate }) {
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = (e) => {
-      console.error('Speech synthesis error', e);
+      if (e.error !== 'interrupted' && e.error !== 'canceled') {
+        console.error('Speech synthesis error', e);
+      }
       setIsSpeaking(false);
     };
 
@@ -212,13 +219,36 @@ export default function Dashboard({ onNavigate }) {
       initial="hidden"
       animate="show"
     >
+      {/* ── Quick Actions (Moved to Top) ── */}
+      <motion.section variants={itemVariants} style={{ marginBottom: 'var(--space-2xl)' }}>
+        <div className="section-header">
+          <h2 className="section-title">Quick Actions</h2>
+        </div>
+        <div className="quick-actions">
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="quick-action" onClick={() => onNavigate('tasks')}>
+            <Plus size={16} /> Add Task
+          </motion.button>
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="quick-action" onClick={() => onNavigate('calendar')}>
+            <CalendarDays size={16} /> View Calendar
+          </motion.button>
+        </div>
+      </motion.section>
+
       {/* ── AI Daily Briefing ── */}
       <motion.section variants={itemVariants} style={{ marginBottom: 'var(--space-2xl)' }}>
         <div className="section-header">
           <h2 className="section-title flex items-center gap-2">
             <Brain className="text-purple" size={24} /> AI Daily Briefing
           </h2>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <motion.button 
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }} 
+              className="btn btn-primary" 
+              onClick={fetchBriefing}
+            >
+              <RefreshCw size={16} /> Get Briefing
+            </motion.button>
             {briefing && !briefingLoading && !briefingError && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -233,15 +263,6 @@ export default function Dashboard({ onNavigate }) {
                 )}
               </motion.button>
             )}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="btn btn-ghost"
-              onClick={fetchBriefing}
-              disabled={briefingLoading}
-            >
-              <RefreshCw size={16} className={briefingLoading ? "spin" : ""} /> Refresh
-            </motion.button>
           </div>
         </div>
 
@@ -275,7 +296,7 @@ export default function Dashboard({ onNavigate }) {
                 <AlertTriangle size={20} />
                 <p style={{ fontSize: 14 }}>{briefingError}</p>
               </motion.div>
-            ) : (
+            ) : briefing ? (
               <motion.div
                 key="content"
                 initial={{ opacity: 0, y: 10 }}
@@ -285,6 +306,24 @@ export default function Dashboard({ onNavigate }) {
                   __html: marked.parse(briefing),
                 }}
               />
+            ) : (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  padding: '32px',
+                  color: 'var(--text-tertiary)',
+                  fontSize: '0.95rem',
+                  fontStyle: 'italic',
+                  textAlign: 'center'
+                }}
+              >
+                Click "Get Briefing" to generate your personalized daily summary.
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -541,26 +580,6 @@ export default function Dashboard({ onNavigate }) {
         )}
       </motion.section>
 
-      {/* ── Quick Actions ── */}
-      <motion.section variants={itemVariants}>
-        <div className="section-header">
-          <h2 className="section-title">Quick Actions</h2>
-        </div>
-        <div className="quick-actions">
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="quick-action" onClick={() => onNavigate('tasks')}>
-            <Plus size={16} /> Add Task
-          </motion.button>
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="quick-action" onClick={() => onNavigate('chat')}>
-            <MessageSquare size={16} /> Ask AI
-          </motion.button>
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="quick-action" onClick={() => onNavigate('calendar')}>
-            <CalendarDays size={16} /> View Calendar
-          </motion.button>
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="quick-action" onClick={fetchBriefing}>
-            <RefreshCw size={16} /> Get Briefing
-          </motion.button>
-        </div>
-      </motion.section>
     </motion.div>
   );
 }

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TaskProvider } from '@/context/TaskContext';
-import { RoutineProvider } from '@/context/RoutineContext';
+import { TaskProvider, useTasks } from '@/context/TaskContext';
+import { RoutineProvider, useRoutines } from '@/context/RoutineContext';
 import Navbar from '@/components/Sidebar';
 import Dashboard from '@/components/Dashboard';
 import TaskManager from '@/components/TaskManager';
@@ -14,24 +14,35 @@ import NotesView from '@/components/NotesView';
 import FocusView from '@/components/FocusView';
 import FloatingClock from '@/components/FloatingClock';
 import { NoteProvider } from '@/context/NoteContext';
+import { useNotifications } from '@/hooks/useNotifications';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Menu } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
+import AIChatPanel from '@/components/AIChatPanel';
+import { MessageSquare } from 'lucide-react';
+import NotificationDaemon from '@/components/NotificationDaemon';
+
 function AppContent() {
   const [activeView, setActiveView] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const { tasks } = useTasks();
+  const { routines } = useRoutines();
+
+  // Initialize notification system
+  useNotifications(tasks, routines);
 
   useEffect(() => {
     const hash = window.location.hash.replace('#', '');
-    if (hash) {
+    if (hash && hash !== 'chat') {
       setActiveView(hash);
     }
     
     const handleHashChange = () => {
       const newHash = window.location.hash.replace('#', '');
-      if (newHash) setActiveView(newHash);
+      if (newHash && newHash !== 'chat') setActiveView(newHash);
     };
     
     window.addEventListener('hashchange', handleHashChange);
@@ -44,8 +55,6 @@ function AppContent() {
         return <Dashboard onNavigate={setActiveView} />;
       case 'tasks':
         return <TaskManager />;
-      case 'chat':
-        return <ChatView />;
       case 'calendar':
         return <CalendarView />;
       case 'analytics':
@@ -72,7 +81,7 @@ function AppContent() {
         }}
       />
 
-      <main className="main-content">
+      <main className="main-content" style={{ paddingBottom: '70px' }}>
         <header className="page-header" style={{ display: 'none' /* handled by inner components */ }} />
         
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -90,6 +99,36 @@ function AppContent() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Floating Chat Button (FAB) */}
+      <motion.button
+        className="fab-chat-btn"
+        onClick={() => setIsChatOpen(true)}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        style={{
+          position: 'fixed',
+          bottom: '80px',
+          right: '24px',
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          background: 'var(--gradient-primary)',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: 'var(--shadow-glow)',
+          zIndex: 900,
+          border: 'none',
+          cursor: 'pointer'
+        }}
+      >
+        <MessageSquare size={24} />
+      </motion.button>
+
+      <AIChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      
       <FloatingClock />
     </div>
   );
@@ -148,6 +187,7 @@ export default function Home() {
     <TaskProvider>
       <RoutineProvider>
         <NoteProvider>
+          <NotificationDaemon />
           <AppContent />
         </NoteProvider>
       </RoutineProvider>

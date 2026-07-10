@@ -204,9 +204,29 @@ export default function TaskManager() {
   const [showVisionModal, setShowVisionModal] = useState(false);
   const fileInputRef = useRef(null);
 
+  // --- Date conversion helpers ---
+  const toLocalISOString = (isoString) => {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return '';
+    const pad = n => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const fromLocalISOString = (localString) => {
+    if (!localString) return null;
+    const d = new Date(localString);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString();
+  };
+
   // --- Form field change handler (used by modal inputs) ---
   const handleFormChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'dueDate') {
+      setFormData(prev => ({ ...prev, [field]: fromLocalISOString(value) }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   // --- Date validation helper ---
@@ -713,6 +733,11 @@ export default function TaskManager() {
                             color: 'var(--text-tertiary)',
                             marginBottom: 8,
                             lineHeight: 1.5,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
                           }}
                         >
                           {task.description}
@@ -907,7 +932,7 @@ export default function TaskManager() {
                     <input
                       className="input"
                       type="datetime-local"
-                      value={formData.dueDate || ''}
+                      value={toLocalISOString(formData.dueDate)}
                       onChange={(e) => handleFormChange('dueDate', e.target.value)}
                     />
                   </div>

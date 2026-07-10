@@ -37,6 +37,34 @@ export default function ChatView() {
   const textareaRef = useRef(null);
   const recognitionRef = useRef(null);
 
+  // Load chat history from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('lifeline_chat_history');
+      if (saved) {
+        const { messages: savedMessages, lastUpdated } = JSON.parse(saved);
+        // Only keep if within the last 1 hour (3600000 ms)
+        if (Date.now() - lastUpdated < 3600000) {
+          setMessages(savedMessages);
+        } else {
+          localStorage.removeItem('lifeline_chat_history');
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load chat history', e);
+    }
+  }, []);
+
+  // Save chat history on update
+  useEffect(() => {
+    if (messages.length > 1) { // Don't save if it's just the welcome message
+      localStorage.setItem('lifeline_chat_history', JSON.stringify({
+        messages,
+        lastUpdated: Date.now()
+      }));
+    }
+  }, [messages]);
+
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -63,10 +91,11 @@ export default function ChatView() {
       setError('');
 
       try {
+        const historyToSend = messages.slice(-20); // Send last 20 messages for context
         const res = await fetch('/api/ai/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: trimmed, tasks, routines, context: '', currentTime: new Date().toString() }),
+          body: JSON.stringify({ message: trimmed, history: historyToSend, tasks, routines, context: '', currentTime: new Date().toString() }),
         });
 
         if (!res.ok) throw new Error(res.status === 429 ? 'rate_limit' : 'chat_failed');
@@ -177,60 +206,26 @@ export default function ChatView() {
 
   const showSuggestions = messages.length <= 1;
 
+  const clearChat = () => {
+    setMessages([WELCOME_MESSAGE]);
+    localStorage.removeItem('lifeline_chat_history');
+  };
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', flex: 1, width: '100%' }}>
-      {/* Chat Header */}
-      <div className="page-header">
-        <div className="page-header-content">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--gradient-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: 'var(--shadow-glow)',
-              }}
-            >
-              <Sparkles className="text-white" size={20} />
-            </div>
-            <div>
-              <h1 className="page-title" style={{ fontSize: 20 }}>
-                LifeLine AI Assistant
-              </h1>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  marginTop: 2,
-                }}
-              >
-                <motion.span
-                  animate={{ opacity: [1, 0.5, 1] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: 'var(--accent-green)',
-                    boxShadow: '0 0 8px rgba(16,185,129,0.5)',
-                  }}
-                />
-                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                  Online
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}>
 
       {/* Chat Container */}
       <div className="chat-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        {messages.length > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 16px', borderBottom: '1px solid var(--border-color)' }}>
+            <button 
+              onClick={clearChat}
+              style={{ fontSize: '11px', color: 'var(--text-tertiary)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              <XCircle size={12} /> Clear Chat
+            </button>
+          </div>
+        )}
         {/* Messages */}
         <div className="chat-messages p-4" style={{ flex: 1, overflowY: 'auto' }}>
           <AnimatePresence>
@@ -263,7 +258,7 @@ export default function ChatView() {
                           fontWeight: 600
                         }}>
                           <CheckCircle2 size={12} />
-                          Added {action.type === 'add_task' ? 'Task' : 'Routine'}: {action.payload?.title}
+                          Added {action.type === 'add_task' ? 'Task' : 'Routine'}: {action.payload?.title || (action.type === 'add_task' ? 'New Task' : 'New Routine')}
                         </div>
                       ))}
                     </div>
@@ -420,6 +415,6 @@ export default function ChatView() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
