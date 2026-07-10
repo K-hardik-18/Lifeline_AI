@@ -3,57 +3,32 @@
 import { useState, useEffect } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Timer, Play, Pause, RotateCcw, Target, CheckCircle2, Settings } from 'lucide-react';
+import { Timer, Play, Pause, RotateCcw, Target, CheckCircle2, Settings, Volume2, VolumeX } from 'lucide-react';
 
-let audioCtx = null;
-const getAudioContext = () => {
-  if (typeof window === 'undefined') return null;
-  if (!audioCtx) {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (AudioContext) audioCtx = new AudioContext();
-  }
-  return audioCtx;
-};
+let tickAudio = null;
+let alarmAudio = null;
 
-const playTick = () => {
+if (typeof window !== 'undefined') {
+  tickAudio = new Audio('/tick_sound.mp3');
+  alarmAudio = new Audio('/end_sound.mp3');
+}
+
+const playTick = (muted) => {
+  if (muted) return;
   try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(400, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.05);
-    gain.gain.setValueAtTime(0.5, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.05);
+    if (tickAudio) {
+      tickAudio.currentTime = 0;
+      tickAudio.play().catch(e => console.log('Audio play prevented', e));
+    }
   } catch (e) {}
 };
 
-const playAlarm = () => {
+const playAlarm = (muted) => {
+  if (muted) return;
   try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
-    
-    // Play 3 loud beeps
-    for (let i = 0; i < 3; i++) {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(800, ctx.currentTime + i * 0.4);
-      osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + i * 0.4 + 0.3);
-      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.4);
-      gain.gain.linearRampToValueAtTime(1, ctx.currentTime + i * 0.4 + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.4 + 0.3);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(ctx.currentTime + i * 0.4);
-      osc.stop(ctx.currentTime + i * 0.4 + 0.3);
+    if (alarmAudio) {
+      alarmAudio.currentTime = 0;
+      alarmAudio.play().catch(e => console.log('Audio play prevented', e));
     }
   } catch (e) {}
 };
@@ -70,6 +45,7 @@ export default function FocusView() {
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState('work'); // 'work' | 'break'
   const [showSettings, setShowSettings] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   
   // Selected task state
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -82,10 +58,10 @@ export default function FocusView() {
     if (isActive && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(timeLeft => timeLeft - 1);
-        playTick();
+        playTick(isMuted);
       }, 1000);
     } else if (timeLeft === 0 && isActive) {
-      playAlarm();
+      playAlarm(isMuted);
       if (mode === 'work') {
         // Work finished -> Start Break automatically and exit fullscreen
         setMode('break');
@@ -101,7 +77,7 @@ export default function FocusView() {
       }
     }
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, mode]);
+  }, [isActive, timeLeft, mode, isMuted, workDuration, breakDuration]);
 
   const toggleTimer = () => {
     if (!isActive) {
@@ -180,6 +156,13 @@ export default function FocusView() {
               style={{ background: mode === 'break' ? 'var(--accent-green)' : undefined }}
             >
               Break ({breakDuration}m)
+            </button>
+            <button
+              className="btn btn-ghost btn-icon"
+              onClick={() => setIsMuted(!isMuted)}
+              title={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
             <button
               className="btn btn-ghost btn-icon"
@@ -402,13 +385,23 @@ export default function FocusView() {
                 Focusing on: <span style={{ color: 'white' }}>{selectedTask.title}</span>
               </div>
             )}
-            <button 
-              className="btn btn-ghost"
-              onClick={toggleTimer}
-              style={{ marginTop: 60, padding: '12px 24px', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.2)', fontSize: 16 }}
-            >
-              <Pause size={18} style={{ marginRight: 8 }} /> Pause & Exit Fullscreen
-            </button>
+            <div style={{ display: 'flex', gap: '16px', marginTop: 60 }}>
+              <button 
+                className="btn btn-ghost"
+                onClick={() => setIsMuted(!isMuted)}
+                style={{ padding: '12px 24px', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.2)', fontSize: 16 }}
+              >
+                {isMuted ? <VolumeX size={18} style={{ marginRight: 8 }} /> : <Volume2 size={18} style={{ marginRight: 8 }} />}
+                {isMuted ? "Unmute" : "Mute"}
+              </button>
+              <button 
+                className="btn btn-ghost"
+                onClick={toggleTimer}
+                style={{ padding: '12px 24px', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.2)', fontSize: 16 }}
+              >
+                <Pause size={18} style={{ marginRight: 8 }} /> Pause & Exit Fullscreen
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
